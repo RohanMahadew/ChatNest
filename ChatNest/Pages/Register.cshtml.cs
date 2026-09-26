@@ -30,6 +30,15 @@ namespace ChatNest.Pages
             public string Email { get; set; } = string.Empty;
 
             [Required]
+            [Display(Name = "Username")]
+            public string Username { get; set; } = string.Empty;
+
+            [Required]
+            [DataType(DataType.Date)]
+            [Display(Name = "DateOfBirth")]
+            public DateOnly DateOfBirth { get; set; } = new DateOnly();
+
+            [Required]
             [StringLength(
                 100,
                 ErrorMessage = "The {0} must be at least {2} and at most {1} characters long.",
@@ -62,22 +71,27 @@ namespace ChatNest.Pages
 
             var user = new ApplicationUser
             {
-                UserName = Input.Email,
-                Email = Input.Email
+                UserName = Input.Username,
+                Email = Input.Email,
+                DateOfBirth = Input.DateOfBirth
             };
 
             var result = await _userManager.CreateAsync(user, Input.Password);
 
             if (result.Succeeded)
             {
-                await _signInManager.SignInAsync(user, isPersistent: false);
+                await _signInManager.SignInAsync(
+                    user,
+                    isPersistent: false);
 
                 return LocalRedirect(returnUrl);
             }
 
             foreach (var error in result.Errors)
             {
-                ModelState.AddModelError(string.Empty, error.Description);
+                ModelState.AddModelError(
+                    string.Empty,
+                    error.Description);
             }
 
             return Page();
