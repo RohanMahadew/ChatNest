@@ -36,6 +36,9 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
     .AddIdentityCookies();
 
+builder.Services.AddRazorPages();
+builder.Services.AddRazorComponents();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
