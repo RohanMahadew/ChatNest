@@ -5,88 +5,325 @@
     ViewData["Title"] = "Register";
 }
 
-<h1>@ViewData["Title"]</h1>
+<!-- HERO -->
+<section
+        class="flex items-center px-5 py-14 sm:px-8 lg:px-12 lg:py-20"
+      >
+        <div class="max-w-xl">
 
-<div class="row">
-    <div class="col-md-6">
-        <form method="post">
+          <!-- Badge -->
+          <div
+            class="mb-6 inline-flex items-center gap-2 rounded-full
+                   border border-white/10 bg-white/[0.06] px-3 py-1.5
+                   text-xs font-semibold tracking-wide text-white/70
+                   backdrop-blur-sm"
+          >
+            <span class="h-1.5 w-1.5 rounded-full bg-[#b98acb]"></span>
+            JOIN THE COMMUNITY
+          </div>
 
-            <div asp-validation-summary="ModelOnly"
-                 class="text-danger"
-                 role="alert"></div>
+          <h1
+            class="max-w-lg text-4xl font-black leading-[1.05]
+                   tracking-tight text-white sm:text-5xl lg:text-6xl"
+          >
+            Your conversations.
+            <span class="text-[#a875bc]">Your nest.</span>
+          </h1>
 
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Email"
-                       class="form-control"
-                       autocomplete="email"
-                       aria-required="true"
-                       placeholder="name@example.com" />
+          <p
+            class="mt-6 max-w-lg text-base leading-7 text-white/60 sm:text-lg"
+          >
+            Create your ChatNest account and find a comfortable place
+            to connect, chat, and build meaningful conversations.
+          </p>
 
-                <label asp-for="Input.Email"></label>
+          <!-- Feature list -->
+          <div class="mt-9 space-y-4">
 
-                <span asp-validation-for="Input.Email"
-                      class="text-danger"></span>
+            <div class="flex items-center gap-3 text-sm text-white/70">
+              <span
+                class="flex h-8 w-8 shrink-0 items-center justify-center
+                       rounded-lg bg-[#603273]/40 text-[#c79bd5]"
+              >
+                ✓
+              </span>
+              Create your unique identity
             </div>
 
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Username"
-                       class="form-control"
-                       autocomplete="username"
-                       aria-required="true"
-                       placeholder="Username" />
-
-                <label asp-for="Input.Username"></label>
-
-                <span asp-validation-for="Input.Username"
-                      class="text-danger"></span>
+            <div class="flex items-center gap-3 text-sm text-white/70">
+              <span
+                class="flex h-8 w-8 shrink-0 items-center justify-center
+                       rounded-lg bg-[#603273]/40 text-[#c79bd5]"
+              >
+                ✓
+              </span>
+              Connect with people who share your interests
             </div>
 
-            <div class="form-floating mb-3">
-                <input asp-for="Input.DateOfBirth"
-                       class="form-control"
-                       type="date"
-                       aria-required="true" />
-
-                <label asp-for="Input.DateOfBirth"></label>
-
-                <span asp-validation-for="Input.DateOfBirth"
-                      class="text-danger"></span>
+            <div class="flex items-center gap-3 text-sm text-white/70">
+              <span
+                class="flex h-8 w-8 shrink-0 items-center justify-center
+                       rounded-lg bg-[#603273]/40 text-[#c79bd5]"
+              >
+                ✓
+              </span>
+              Make ChatNest your own
             </div>
 
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Password"
-                       class="form-control"
-                       autocomplete="new-password"
-                       aria-required="true"
-                       placeholder="password" />
+          </div>
 
-                <label asp-for="Input.Password"></label>
+          <!-- Decorative visual -->
+          <div class="relative mt-12 hidden h-24 max-w-md overflow-hidden sm:block">
+            <div
+              class="absolute bottom-0 left-0 h-px w-full
+                     bg-gradient-to-r from-[#603273] via-white/10 to-transparent"
+            ></div>
 
-                <span asp-validation-for="Input.Password"
-                      class="text-danger"></span>
+            <div
+              class="absolute bottom-0 left-[8%] h-16 w-16 rotate-45
+                     rounded-[20px] border border-white/10 bg-white/[0.02]"
+            ></div>
+
+            <div
+              class="absolute bottom-0 left-[25%] h-24 w-24 rotate-45
+                     rounded-[25px] border border-[#603273]/30 bg-[#603273]/10"
+            ></div>
+
+            <div
+              class="absolute bottom-0 left-[48%] h-12 w-12 rotate-45
+                     rounded-xl border border-white/10 bg-white/[0.02]"
+            ></div>
+          </div>
+
+        </div>
+      </section>
+
+<!-- Registration Form -->
+<section
+        class="flex items-center justify-center px-5 pb-12 sm:px-8 lg:px-12 lg:py-16"
+      >
+        <div
+          class="w-full max-w-md rounded-2xl border border-white/10
+                 bg-[#091a50]/85 p-6 shadow-2xl shadow-black/30
+                 backdrop-blur-xl sm:p-8"
+        >
+
+          <!-- Form heading -->
+          <div class="mb-7">
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#b98acb]">
+              Get started
+            </p>
+
+            <h2 class="mt-2 text-2xl font-bold tracking-tight">
+              Create your account
+            </h2>
+
+            <p class="mt-2 text-sm leading-6 text-white/50">
+              It only takes a minute. Choose your details below.
+            </p>
+          </div>
+
+
+          <form action="#" method="post" class="space-y-4">
+
+            <!-- Email -->
+            <div>
+              <label
+                for="email"
+                class="mb-2 block text-sm font-semibold text-white/80"
+              >
+                Email address
+              </label>
+
+              <input
+                type="email"
+                id="email"
+                name="email"
+                autocomplete="email"
+                placeholder="you@example.com"
+                required
+                class="h-11 w-full rounded-lg border border-white/10
+                       bg-white/[0.07] px-3.5 text-sm text-white
+                       placeholder:text-white/25 outline-none
+                       transition duration-200
+                       focus:border-[#a875bc] focus:bg-white/[0.09]
+                       focus:ring-2 focus:ring-[#603273]/40"
+              />
             </div>
 
-            <div class="form-floating mb-3">
-                <input asp-for="Input.ConfirmPassword"
-                       class="form-control"
-                       autocomplete="new-password"
-                       aria-required="true"
-                       placeholder="password" />
 
-                <label asp-for="Input.ConfirmPassword"></label>
+            <!-- Username -->
+            <div>
+              <label
+                for="username"
+                class="mb-2 block text-sm font-semibold text-white/80"
+              >
+                Username
+              </label>
 
-                <span asp-validation-for="Input.ConfirmPassword"
-                      class="text-danger"></span>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                autocomplete="username"
+                placeholder="choose-a-username"
+                required
+                class="h-11 w-full rounded-lg border border-white/10
+                       bg-white/[0.07] px-3.5 text-sm text-white
+                       placeholder:text-white/25 outline-none
+                       transition duration-200
+                       focus:border-[#a875bc] focus:bg-white/[0.09]
+                       focus:ring-2 focus:ring-[#603273]/40"
+              />
             </div>
 
-            <button type="submit"
-                    class="w-100 btn btn-lg btn-primary">
-                Register
+
+            <!-- Date of birth -->
+            <div>
+              <label
+                for="dob"
+                class="mb-2 block text-sm font-semibold text-white/80"
+              >
+                Date of birth
+              </label>
+
+              <input
+                type="date"
+                id="dob"
+                name="dob"
+                autocomplete="bday"
+                required
+                class="h-11 w-full rounded-lg border border-white/10
+                       bg-white/[0.07] px-3.5 text-sm text-white
+                       outline-none transition duration-200
+                       focus:border-[#a875bc] focus:bg-white/[0.09]
+                       focus:ring-2 focus:ring-[#603273]/40
+                       [color-scheme:dark]"
+              />
+            </div>
+
+
+            <!-- Password -->
+            <div>
+              <label
+                for="password"
+                class="mb-2 block text-sm font-semibold text-white/80"
+              >
+                Password
+              </label>
+
+              <input
+                type="password"
+                id="password"
+                name="password"
+                autocomplete="new-password"
+                placeholder="••••••••••••"
+                required
+                class="h-11 w-full rounded-lg border border-white/10
+                       bg-white/[0.07] px-3.5 text-sm text-white
+                       placeholder:text-white/25 outline-none
+                       transition duration-200
+                       focus:border-[#a875bc] focus:bg-white/[0.09]
+                       focus:ring-2 focus:ring-[#603273]/40"
+              />
+            </div>
+
+
+            <!-- Confirm password -->
+            <div>
+              <label
+                for="confirm-password"
+                class="mb-2 block text-sm font-semibold text-white/80"
+              >
+                Confirm password
+              </label>
+
+              <input
+                type="password"
+                id="confirm-password"
+                name="confirm-password"
+                autocomplete="new-password"
+                placeholder="••••••••••••"
+                required
+                class="h-11 w-full rounded-lg border border-white/10
+                       bg-white/[0.07] px-3.5 text-sm text-white
+                       placeholder:text-white/25 outline-none
+                       transition duration-200
+                       focus:border-[#a875bc] focus:bg-white/[0.09]
+                       focus:ring-2 focus:ring-[#603273]/40"
+              />
+            </div>
+
+
+            <!-- Terms -->
+            <label
+              for="terms"
+              class="flex cursor-pointer items-start gap-3 rounded-lg
+                     border border-white/5 bg-white/[0.025] p-3.5
+                     transition hover:border-white/10 hover:bg-white/[0.04]"
+            >
+              <input
+                type="checkbox"
+                id="terms"
+                name="terms"
+                required
+                class="mt-0.5 h-4 w-4 shrink-0 cursor-pointer
+                       rounded border-white/20 bg-white/10
+                       accent-[#603273] focus:ring-2 focus:ring-[#a875bc]"
+              />
+
+              <span class="text-xs leading-5 text-white/50">
+                I agree to the
+                <a
+                  href="#"
+                  class="font-semibold text-[#c79bd5] hover:text-white"
+                >
+                  terms of service
+                </a>
+                and acknowledge the privacy policy.
+              </span>
+            </label>
+
+
+            <!-- Submit -->
+            <button
+              type="submit"
+              class="group relative mt-2 flex h-11 w-full items-center
+                     justify-center overflow-hidden rounded-lg
+                     bg-[#603273] text-sm font-bold text-white
+                     shadow-lg shadow-[#603273]/20
+                     transition duration-300
+                     hover:bg-[#75418b] hover:shadow-[#603273]/30
+                     focus:outline-none focus:ring-2 focus:ring-white/50
+                     focus:ring-offset-2 focus:ring-offset-[#091a50]"
+            >
+              <span class="relative z-10">Create account</span>
+
+              <span
+                class="absolute inset-0 -translate-x-full
+                       bg-gradient-to-r from-transparent
+                       via-white/10 to-transparent
+                       transition duration-700
+                       group-hover:translate-x-full"
+              ></span>
             </button>
 
-        </form>
-    </div>
-</div>
+          </form>
+
+
+          <!-- Login -->
+          <p class="mt-6 text-center text-xs text-white/40">
+            Already registered?
+            <a
+              href="#"
+              class="font-semibold text-[#c79bd5] transition hover:text-white"
+            >
+              Sign in
+            </a>
+          </p>
+
+        </div>
+      </section>
 
 
 @section Scripts {

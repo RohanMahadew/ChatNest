@@ -1,100 +1,158 @@
 using ChatNest.Models;
+using ChatNest.Models.DTO;
+using ChatNest.Request.Authentication;
+using ChatNest.Service;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore.Internal;
 using System.ComponentModel.DataAnnotations;
 
 namespace ChatNest.Pages
 {
-    public class RegisterModel : PageModel
-    {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
+    //public class RegisterModel : PageModel
+    //{
+    //    private readonly UserManager<ApplicationUser> _userManager;
+    //    private readonly SignInManager<ApplicationUser> _signInManager;
 
-        public RegisterModel(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+    //    public RegisterModel(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+    //    {
+    //        _userManager = userManager;
+    //        _signInManager = signInManager;
+    //    }
+
+    //    [BindProperty]
+    //    public InputModel Input { get; set; } = new();
+
+    //    public string? ReturnUrl { get; set; }
+
+    //    public class InputModel
+    //    {
+    //        [Required]
+    //        [EmailAddress]
+    //        [Display(Name = "Email")]
+    //        public string Email { get; set; } = string.Empty;
+
+    //        [Required]
+    //        [Display(Name = "Username")]
+    //        public string Username { get; set; } = string.Empty;
+
+    //        [Required]
+    //        [DataType(DataType.Date)]
+    //        [Display(Name = "DateOfBirth")]
+    //        public DateOnly DateOfBirth { get; set; } = new DateOnly();
+
+    //        [Required]
+    //        [StringLength(
+    //            100,
+    //            ErrorMessage = "The {0} must be at least {2} and at most {1} characters long.",
+    //            MinimumLength = 6)]
+    //        [DataType(DataType.Password)]
+    //        [Display(Name = "Password")]
+    //        public string Password { get; set; } = string.Empty;
+
+    //        [DataType(DataType.Password)]
+    //        [Display(Name = "Confirm password")]
+    //        [Compare(
+    //            "Password",
+    //            ErrorMessage = "The password and confirmation password do not match.")]
+    //        public string ConfirmPassword { get; set; } = string.Empty;
+    //    }
+
+    //    public void OnGet(string? returnUrl = null)
+    //    {
+    //        ReturnUrl = returnUrl;
+    //    }
+
+    //    public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
+    //    {
+    //        returnUrl ??= Url.Content("~/");
+
+    //        if (!ModelState.IsValid)
+    //        {
+    //            return Page();
+    //        }
+
+    //        var user = new ApplicationUser
+    //        {
+    //            UserName = Input.Username,
+    //            Email = Input.Email,
+    //            DateOfBirth = Input.DateOfBirth
+    //        };
+
+    //        var result = await _userManager.CreateAsync(user, Input.Password);
+
+    //        if (result.Succeeded)
+    //        {
+    //            await _signInManager.SignInAsync(
+    //                user,
+    //                isPersistent: false);
+
+    //            return LocalRedirect(returnUrl);
+    //        }
+
+    //        foreach (var error in result.Errors)
+    //        {
+    //            ModelState.AddModelError(
+    //                string.Empty,
+    //                error.Description);
+    //        }
+
+    //        return Page();
+    //    }
+    //}
+    public class RegisterModel: PageModel
+    {
+        private readonly AuthService _authService;
+        public RegisterModel(AuthService authenticationService)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
+            _authService = authenticationService;
         }
 
         [BindProperty]
-        public InputModel Input { get; set; } = new();
+        public RegisterInputDTO Input { get; set; } = new();
 
         public string? ReturnUrl { get; set; }
-
-        public class InputModel
-        {
-            [Required]
-            [EmailAddress]
-            [Display(Name = "Email")]
-            public string Email { get; set; } = string.Empty;
-
-            [Required]
-            [Display(Name = "Username")]
-            public string Username { get; set; } = string.Empty;
-
-            [Required]
-            [DataType(DataType.Date)]
-            [Display(Name = "DateOfBirth")]
-            public DateOnly DateOfBirth { get; set; } = new DateOnly();
-
-            [Required]
-            [StringLength(
-                100,
-                ErrorMessage = "The {0} must be at least {2} and at most {1} characters long.",
-                MinimumLength = 6)]
-            [DataType(DataType.Password)]
-            [Display(Name = "Password")]
-            public string Password { get; set; } = string.Empty;
-
-            [DataType(DataType.Password)]
-            [Display(Name = "Confirm password")]
-            [Compare(
-                "Password",
-                ErrorMessage = "The password and confirmation password do not match.")]
-            public string ConfirmPassword { get; set; } = string.Empty;
-        }
 
         public void OnGet(string? returnUrl = null)
         {
             ReturnUrl = returnUrl;
         }
 
-        public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
+        public async Task<IActionResult> OnPostAsync(
+            string? returnUrl = null)
         {
-            returnUrl ??= Url.Content("~/");
+            ReturnUrl = returnUrl;
 
             if (!ModelState.IsValid)
             {
                 return Page();
             }
 
-            var user = new ApplicationUser
+            var request = new StoreUserRequest(
+                Input.Email,
+                Input.Username,
+                Input.DateOfBirth!.Value,
+                Input.Password);
+
+            var result =
+                await _authService.RegisterAsync(request);
+
+            if (!result.Succeeded)
             {
-                UserName = Input.Username,
-                Email = Input.Email,
-                DateOfBirth = Input.DateOfBirth
-            };
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(
+                        string.Empty,
+                        error);
+                }
 
-            var result = await _userManager.CreateAsync(user, Input.Password);
-
-            if (result.Succeeded)
-            {
-                await _signInManager.SignInAsync(
-                    user,
-                    isPersistent: false);
-
-                return LocalRedirect(returnUrl);
+                return Page();
             }
 
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(
-                    string.Empty,
-                    error.Description);
-            }
-
-            return Page();
+            return LocalRedirect(
+                returnUrl ?? Url.Content("~/")!);
         }
     }
 }
