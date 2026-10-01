@@ -1,5 +1,4 @@
-using ChatNest.Models;
-using Microsoft.AspNetCore.Identity;
+using ChatNest.Service;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -7,16 +6,17 @@ namespace ChatNest.Pages
 {
     public class LogoutModel : PageModel
     {
-        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly AuthService _authService;
+        public bool isAuthenticated = false;
 
-        public LogoutModel(SignInManager<ApplicationUser> signInManager)
+        public LogoutModel(AuthService authService)
         {
-            _signInManager = signInManager;
+            _authService = authService;
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            await _signInManager.SignOutAsync();
+            await _authService.SignOutUserAsync();
 
             return RedirectToPage("/Index");
         }

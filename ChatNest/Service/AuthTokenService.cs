@@ -1,0 +1,86 @@
+using ChatNest.Models;
+using ChatNest.Repositories;
+using System.Security.Cryptography;
+using System.Text;
+
+namespace ChatNest.Service
+{
+    public class AuthTokenService
+    {
+        private readonly UserRepository _repository;
+        private readonly SqlConnectionService _connectionService;
+        public AuthTokenService(UserRepository userRepository, SqlConnectionService sqlConnectionService)
+        {
+            _repository = userRepository;
+            _connectionService = sqlConnectionService;
+        }
+
+        private const string TokenKey = "_authtoken";
+        private const int TokenExpirationHours = 1;
+
+        public string GenerateToken(int userId, string username, string email)
+        {
+            var tokenData = $"{userId}:{username}:{email}:{DateTime.UtcNow.Ticks}:{Guid.NewGuid()}";
+            using (var sha256 = SHA256.Create())
+            {
+                var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(tokenData));
+                return Convert.ToBase64String(hash) + ":" + userId;
+            }
+        }
+
+        public async Task<User> ValidateUserCookie(HttpRequest request)
+        {
+            var token = GetAuthTokenFromCookie(request);
+
+            if (string.IsNullOrEmpty(token))
+                return null;
+
+            // <hash>:<userId>
+            var parts = token.Split(':');
+
+            if (parts.Length != 2)
+                return null;
+
+            if (!int.TryParse(parts[1], out int userId))
+                return null;
+
+            User user = await _repository.ValidateToken(
+                await _connectionService.GetConnectionAsync(),
+                userId,
+                token
+            );
+
+            if (user == null)
+                return null;
+
+            return user;
+        }
+
+        public string GetAuthTokenFromCookie(HttpRequest request)
+        {
+            if (request == null)
+                return null;
+
+            if (request.Cookies[TokenKey] == null)
+                return null;
+
+            return request.Cookies[TokenKey].ToString();
+        }
+
+        public async Task<bool> IsAuthenticated(HttpRequest request)
+        {
+            return await ValidateUserCookie(request) != null;
+        }
+
+        public CookieOptions GetCookieOptions()
+        {
+            return new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = false, 
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddHours(TokenExpirationHours)
+            };
+        }
+    }
+}

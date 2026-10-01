@@ -1,75 +1,121 @@
-﻿using ChatNest.Models;
+using ChatNest.Models;
 using ChatNest.Request.Authentication;
 using ChatNest.Service.Interface;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.SqlClient;
+using BCrypt.Net;
+using ChatNest.Repositories;
 
 namespace ChatNest.Service
 {
-    public class AuthService :IAuthenticationInterface
+    public class AuthService : IAuthenticationInterface
     {
-        private readonly UserManager<ApplicationUser> userManager;
-        private readonly SignInManager<ApplicationUser> signInManager;
+        private const string AuthTokenCookieName = "_authtoken";
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly AuthTokenService _tokenService;
+        private readonly SqlConnectionService _connectionService;
+        private readonly UserRepository _repository;
+
         public AuthService(
-            UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager)
+            IHttpContextAccessor httpContextAccessor,
+            AuthTokenService tokenService,
+            UserRepository repository,
+            SqlConnectionService connectionService)
         {
-            this.userManager = userManager;
-            this.signInManager = signInManager;
+            _httpContextAccessor = httpContextAccessor;
+            _tokenService = tokenService;
+            _repository = repository;
+            _connectionService = connectionService;
         }
 
         public async Task<StoreUserResult> RegisterAsync(StoreUserRequest request)
         {
-            var user = new ApplicationUser
+            using (var connection = await _connectionService.GetConnectionAsync())
             {
-                UserName = request.Username,
-                Email = request.Email,
-                DateOfBirth = request.DateOfBirth
-            };
+                // Check if user already exists
+                var existingUser = await _repository.FindUserByUsernameOrEmailAsync(connection, request.Username, request.Email);
 
-            var result = await userManager.CreateAsync(
-                user,
-                request.Password);
+                if (existingUser != null)
+                {
+                    var errors = new List<string>();
+                    if (existingUser.UserName.ToUpper() == request.Username.ToUpper())
+                        errors.Add("Username already exists.");
+                    if (existingUser.Email.ToUpper() == request.Email.ToUpper())
+                        errors.Add("Email already in use.");
+                    return StoreUserResult.Failure(errors);
+                }
 
-            if (!result.Succeeded)
-            {
-                return StoreUserResult.Failure(
-                    result.Errors.Select(error => error.Description));
+                var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+                var user = new User
+                {
+                    UserName = request.Username,
+                    NormalizedUserName = request.Username.ToUpper(),
+                    Email = request.Email,
+                    NormalizedEmail = request.Email.ToUpper(),
+                    PasswordHash = hashedPassword,
+                    DateOfBirth = request.DateOfBirth,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                var inserted = await _repository.InsertUserAsync(connection, user);
+
+                if (!inserted)
+                {
+                    return StoreUserResult.Failure(new[] { "Failed to create user." });
+                }
+
+                // Set custom auth cookie
+                SetAuthCookie(user);
+
+                return StoreUserResult.Success();
             }
-
-            await signInManager.SignInAsync(
-                user,
-                isPersistent: false);
-
-            return StoreUserResult.Success();
         }
 
         public async Task<AuthenticateUserResult> LoginAsync(AuthenticateUserRequest request)
         {
-            var result = await signInManager.PasswordSignInAsync(
-                request.Username,
-                request.Password,
-                isPersistent: false,
-                lockoutOnFailure: false);
-
-            if (result.Succeeded)
+            using (var connection = await _connectionService.GetConnectionAsync())
             {
+                var user = await _repository.FindUserByUsernameAsync(connection, request.Username);
+
+                if (user == null)
+                {
+                    return AuthenticateUserResult.Failure(
+                        LoginFailureReason.InvalidCredentials);
+                }
+
+                // Verify password
+                bool isValidPassword = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+
+                if (!isValidPassword)
+                {
+                    return AuthenticateUserResult.Failure(
+                        LoginFailureReason.InvalidCredentials);
+                }
+
+                // Set custom auth cookie
+                SetAuthCookie(user);
+
                 return AuthenticateUserResult.Success();
             }
+        }
 
-            if (result.IsLockedOut)
+        public Task SignOutUserAsync()
+        {
+            // Clear the auth cookie
+            _httpContextAccessor.HttpContext!.Response.Cookies.Delete(AuthTokenCookieName);
+            return Task.CompletedTask;
+        }
+
+        private async Task SetAuthCookie(User user)
+        {
+            using (var connection = await _connectionService.GetConnectionAsync())
             {
-                return AuthenticateUserResult.Failure(
-                    LoginFailureReason.LockedOut);
+                var token = _tokenService.GenerateToken(user.Id, user.UserName, user.Email);
+                var cookieOptions = _tokenService.GetCookieOptions();
+                _httpContextAccessor.HttpContext!.Response.Cookies.Append(AuthTokenCookieName, token, cookieOptions);
+                var result = _repository.InsertAuthToken(connection, user.Id, token);
             }
-
-            if (result.IsNotAllowed)
-            {
-                return AuthenticateUserResult.Failure(
-                    LoginFailureReason.NotAllowed);
-            }
-
-            return AuthenticateUserResult.Failure(
-                LoginFailureReason.InvalidCredentials);
         }
     }
 }

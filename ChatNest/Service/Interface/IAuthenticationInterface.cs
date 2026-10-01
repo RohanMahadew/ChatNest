@@ -6,5 +6,6 @@ namespace ChatNest.Service.Interface
     {
         Task<StoreUserResult> RegisterAsync(StoreUserRequest request);
         Task<AuthenticateUserResult> LoginAsync(AuthenticateUserRequest request);
+        Task SignOutUserAsync();
     }
 }

@@ -1,43 +1,21 @@
 using ChatNest.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using ChatNest.Context;
-using Microsoft.AspNetCore.Authentication;
 using ChatNest.Service;
 using ChatNest.Service.Interface;
+using ChatNest.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
-
-// Revert for LUNA prod?
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("PAWS_DB_Connection")));
-
-builder.Services.AddScoped<AuthService>();
-
-
-builder.Services.AddIdentityCore<ApplicationUser>(options =>
-    {
-        options.SignIn.RequireConfirmedAccount = false;
-
-        options.Password.RequireDigit = true;
-        options.Password.RequireLowercase = true;
-        options.Password.RequireUppercase = true;
-        options.Password.RequireNonAlphanumeric = true;
-        options.Password.RequiredLength = 8;
-    })
-    .AddSignInManager()
-    .AddEntityFrameworkStores<ApplicationDbContext>();
-
-builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
-    .AddIdentityCookies();
-
-builder.Services.AddRazorPages();
 builder.Services.AddRazorComponents();
+builder.Services.AddScoped<SqlConnectionService>();
+builder.Services.AddScoped<AuthTokenService>();
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<IAuthenticationInterface>(sp => sp.GetRequiredService<AuthService>());
+
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
@@ -49,16 +27,9 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapRazorPages();
-
 app.UseHttpsRedirection();
 
 app.UseRouting();
-
-app.UseAuthorization();
 
 app.MapStaticAssets();
 app.MapRazorPages()

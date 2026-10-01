@@ -1,9 +1,6 @@
-using ChatNest.Models;
 using ChatNest.Models.DTO;
 using ChatNest.Request.Authentication;
 using ChatNest.Service;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;

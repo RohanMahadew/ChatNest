@@ -3,6 +3,14 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Added
+.vs/
+bin/
+obj/
+*.user
+*.suo
+
+
 # User-specific files
 *.rsuser
 *.suo
