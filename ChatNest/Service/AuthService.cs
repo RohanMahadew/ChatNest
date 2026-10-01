@@ -65,8 +65,14 @@ namespace ChatNest.Service
                     return StoreUserResult.Failure(new[] { "Failed to create user." });
                 }
 
-                // Set custom auth cookie
-                SetAuthCookie(user);
+                // Retrieve the user from the database to get the generated Id
+                var createdUser = await _repository.FindUserByUsernameAsync(connection, request.Username);
+
+                if (createdUser != null)
+                {
+                    // Set custom auth cookie
+                    await SetAuthCookie(createdUser);
+                }
 
                 return StoreUserResult.Success();
             }
@@ -94,7 +100,7 @@ namespace ChatNest.Service
                 }
 
                 // Set custom auth cookie
-                SetAuthCookie(user);
+                await SetAuthCookie(user);
 
                 return AuthenticateUserResult.Success();
             }
@@ -114,7 +120,7 @@ namespace ChatNest.Service
                 var token = _tokenService.GenerateToken(user.Id, user.UserName, user.Email);
                 var cookieOptions = _tokenService.GetCookieOptions();
                 _httpContextAccessor.HttpContext!.Response.Cookies.Append(AuthTokenCookieName, token, cookieOptions);
-                var result = _repository.InsertAuthToken(connection, user.Id, token);
+                var result = await _repository.InsertAuthToken(connection, user.Id, token);
             }
         }
     }

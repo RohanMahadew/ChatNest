@@ -44,16 +44,19 @@ namespace ChatNest.Service
             if (!int.TryParse(parts[1], out int userId))
                 return null;
 
-            User user = await _repository.ValidateToken(
-                await _connectionService.GetConnectionAsync(),
-                userId,
-                token
-            );
+            using (var connection = await _connectionService.GetConnectionAsync())
+            {
+                User user = await _repository.ValidateToken(
+                    connection,
+                    userId,
+                    token
+                );
 
-            if (user == null)
-                return null;
+                if (user == null)
+                    return null;
 
-            return user;
+                return user;
+            }
         }
 
         public string GetAuthTokenFromCookie(HttpRequest request)

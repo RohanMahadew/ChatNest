@@ -104,7 +104,7 @@ namespace ChatNest.Repositories
 
             using (var command = new SqlCommand(query, connection))
             {
-                command.Parameters.AddWithValue("@UserId", userId);
+                command.Parameters.AddWithValue("@Id", userId);
                 command.Parameters.AddWithValue("@AuthToken", authToken);
 
                 var result = await command.ExecuteNonQueryAsync();
@@ -122,13 +122,14 @@ namespace ChatNest.Repositories
                 email: reader.GetString(3),
                 normalizedEmail: reader.GetString(4),
                 passwordHash: reader.GetString(5),
-                authToken: reader.GetString(6),
+                authToken: reader[6] as string,
                 dateOfBirth: DateOnly.FromDateTime(reader.GetDateTime(7))
             )
             {
                 CreatedAt = reader.GetDateTime(8),
                 UpdatedAt = reader.GetDateTime(9)
             };
+            ;
         }
     }
 }
