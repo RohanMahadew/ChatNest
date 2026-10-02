@@ -9,7 +9,9 @@ bin/
 obj/
 *.user
 *.suo
-
+**/appsettings.json
+**/appsettings.json
+**/appsettings.*.json
 
 # User-specific files
 *.rsuser
