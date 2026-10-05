@@ -29,6 +29,30 @@
     focus:border-[#a875bc] focus:bg-white/[0.09]
     focus:ring-2 focus:ring-[#603273]/40" />
 
+     <script>
+            (() => {
+                const input = document.getElementById("@id");
+                const type = input.type;
+
+                if (type === "date") {
+                    const today = new Date();
+
+                    const formatDate = (date) =>
+                        date.toISOString().split("T")[0];
+
+                    const minDate = new Date(today);
+                    minDate.setFullYear(today.getFullYear() - 100);
+
+                    const maxDate = new Date(today);
+                    maxDate.setFullYear(today.getFullYear() - 16);
+
+                    input.min = formatDate(minDate);
+                    input.max = formatDate(maxDate);
+                    input.value = formatDate(maxDate);
+                }
+            })();
+    </script>
+
     @Html.ValidationMessage(
         fieldName,
         null,
