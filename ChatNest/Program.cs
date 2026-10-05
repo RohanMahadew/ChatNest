@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ChatNest.Service;
 using ChatNest.Service.Interface;
 using ChatNest.Repositories;
+using ChatNest.Repositories.Interface;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,10 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 // So far every interface has 1 associated service class. I don't have to write keyed-scoped
 builder.Services.AddRazorPages();
 builder.Services.AddRazorComponents();
-builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<ISqlConnectionInterface, SqlConnectionService>();
 builder.Services.AddScoped<IAuthenticationInterface, AuthService>();
 builder.Services.AddScoped<IAuthTokenInterface, AuthTokenService>();
+builder.Services.AddScoped<IUserRepositoryInterface, UserRepository>();
 
 builder.Services.AddHttpContextAccessor();
 

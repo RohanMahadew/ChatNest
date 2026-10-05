@@ -2,113 +2,135 @@
 using Microsoft.Data.SqlClient;
 using ChatNest.Models;
 using Microsoft.Extensions.Configuration.UserSecrets;
+using ChatNest.Service.Interface;
+using ChatNest.Repositories.Interface;
 
 namespace ChatNest.Repositories
 {
-    public class UserRepository
+    public class UserRepository : IUserRepositoryInterface
     {
-
-        public async Task<User?> FindUserByUsernameAsync(SqlConnection connection, string username)
+        private readonly ISqlConnectionInterface _sqlConnectionService;
+        public UserRepository(ISqlConnectionInterface sqlConnectionService)
         {
-            const string query = "SELECT Id, UserName, NormalizedUserName, Email, NormalizedEmail, PasswordHash, Authtoken, DateOfBirth, CreatedAt, UpdatedAt FROM Users WHERE NormalizedUserName = @NormalizedUserName";
-
-            using (var command = new SqlCommand(query, connection))
-            {
-                command.Parameters.AddWithValue("@NormalizedUserName", username.ToUpper());
-
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    if (await reader.ReadAsync())
-                    {
-                        return MapUserFromReader(reader);
-                    }
-                }
-            }
-
-            return null;
+            _sqlConnectionService = sqlConnectionService;
         }
 
-        public async Task<User?> FindUserByUsernameOrEmailAsync(SqlConnection connection, string username, string email)
+        public async Task<User?> FindUserByUsernameAsync(string username)
         {
-            const string query = "SELECT Id, UserName, NormalizedUserName, Email, NormalizedEmail, PasswordHash, AuthToken, DateOfBirth, CreatedAt, UpdatedAt FROM Users WHERE NormalizedUserName = @NormalizedUserName OR NormalizedEmail = @NormalizedEmail";
-
-            using (var command = new SqlCommand(query, connection))
+            using (var connection = await _sqlConnectionService.GetConnectionAsync())
             {
-                command.Parameters.AddWithValue("@NormalizedUserName", username.ToUpper());
-                command.Parameters.AddWithValue("@NormalizedEmail", email.ToUpper());
+                const string query = "SELECT Id, UserName, NormalizedUserName, Email, NormalizedEmail, PasswordHash, Authtoken, DateOfBirth, CreatedAt, UpdatedAt FROM Users WHERE NormalizedUserName = @NormalizedUserName";
 
-                using (var reader = await command.ExecuteReaderAsync())
+                using (var command = new SqlCommand(query, connection))
                 {
-                    if (await reader.ReadAsync())
+                    command.Parameters.AddWithValue("@NormalizedUserName", username.ToUpper());
+
+                    using (var reader = await command.ExecuteReaderAsync())
                     {
-                        return MapUserFromReader(reader);
+                        if (await reader.ReadAsync())
+                        {
+                            return MapUserFromReader(reader);
+                        }
                     }
                 }
-            }
 
-            return null;
+                return null;
+            }
         }
 
-        public async Task<bool> InsertUserAsync(SqlConnection connection, User user)
+        public async Task<User?> FindUserByUsernameOrEmailAsync(string username, string email)
         {
-            const string query = @"
+            using (var connection = await _sqlConnectionService.GetConnectionAsync())
+            {
+                const string query = "SELECT Id, UserName, NormalizedUserName, Email, NormalizedEmail, PasswordHash, AuthToken, DateOfBirth, CreatedAt, UpdatedAt FROM Users WHERE NormalizedUserName = @NormalizedUserName OR NormalizedEmail = @NormalizedEmail";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@NormalizedUserName", username.ToUpper());
+                    command.Parameters.AddWithValue("@NormalizedEmail", email.ToUpper());
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            return MapUserFromReader(reader);
+                        }
+                    }
+                }
+
+                return null;
+            }
+        }
+
+        public async Task<bool> InsertUserAsync(User user)
+        {
+            using (var connection = await _sqlConnectionService.GetConnectionAsync())
+            {
+                const string query = @"
                 INSERT INTO Users 
                 (UserName, NormalizedUserName, Email, NormalizedEmail, PasswordHash, DateOfBirth, CreatedAt, UpdatedAt) 
                 VALUES 
                 (@UserName, @NormalizedUserName, @Email, @NormalizedEmail, @PasswordHash, @DateOfBirth, @CreatedAt, @UpdatedAt)";
 
-            using (var command = new SqlCommand(query, connection))
-            {
-                command.Parameters.AddWithValue("@UserName", user.UserName);
-                command.Parameters.AddWithValue("@NormalizedUserName", user.NormalizedUserName);
-                command.Parameters.AddWithValue("@Email", user.Email);
-                command.Parameters.AddWithValue("@NormalizedEmail", user.NormalizedEmail);
-                command.Parameters.AddWithValue("@PasswordHash", user.PasswordHash);
-                command.Parameters.AddWithValue("@DateOfBirth", user.DateOfBirth);
-                command.Parameters.AddWithValue("@CreatedAt", user.CreatedAt);
-                command.Parameters.AddWithValue("@UpdatedAt", user.UpdatedAt);
-
-                var result = await command.ExecuteNonQueryAsync();
-                return result > 0;
-            }
-        }
-
-        public async Task<User> ValidateToken(SqlConnection conn, int userId, string token)
-        {
-            const string query = @"SELECT Id,UserName,NormalizedUserName,Email,NormalizedEmail,PasswordHash,AuthToken,
-            DateOfBirth,CreatedAt,UpdatedAt,AuthToken FROM Users WHERE Id = @Id AND AuthToken = @AuthToken";
-
-            using (var command = new SqlCommand(query, conn))
-            {
-                command.Parameters.AddWithValue("@Id", userId);
-                command.Parameters.AddWithValue("@AuthToken", token);
-
-                using (var reader = await command.ExecuteReaderAsync())
+                using (var command = new SqlCommand(query, connection))
                 {
-                    if (await reader.ReadAsync())
-                    {
-                        return MapUserFromReader(reader);
-                    }
+                    command.Parameters.AddWithValue("@UserName", user.UserName);
+                    command.Parameters.AddWithValue("@NormalizedUserName", user.NormalizedUserName);
+                    command.Parameters.AddWithValue("@Email", user.Email);
+                    command.Parameters.AddWithValue("@NormalizedEmail", user.NormalizedEmail);
+                    command.Parameters.AddWithValue("@PasswordHash", user.PasswordHash);
+                    command.Parameters.AddWithValue("@DateOfBirth", user.DateOfBirth);
+                    command.Parameters.AddWithValue("@CreatedAt", user.CreatedAt);
+                    command.Parameters.AddWithValue("@UpdatedAt", user.UpdatedAt);
+
+                    var result = await command.ExecuteNonQueryAsync();
+                    return result > 0;
                 }
             }
-
-            return null;
         }
 
-        public async Task<bool> InsertAuthToken(SqlConnection connection, int userId, string authToken)
+        public async Task<User> ValidateToken(int userId, string token)
         {
-            const string query = @"
+            using (var connection = await _sqlConnectionService.GetConnectionAsync())
+            {
+                const string query = @"SELECT Id,UserName,NormalizedUserName,Email,NormalizedEmail,PasswordHash,AuthToken,
+                    DateOfBirth,CreatedAt,UpdatedAt FROM Users WHERE Id = @Id AND AuthToken = @AuthToken";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Id", userId);
+                    command.Parameters.AddWithValue("@AuthToken", token);
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            return MapUserFromReader(reader);
+                        }
+                    }
+                }
+
+                return null;
+            }
+        }
+
+        public async Task<bool> InsertAuthToken(int userId, string token)
+        {
+            using (var connection = await _sqlConnectionService.GetConnectionAsync())
+            {
+                const string query = @"
                 UPDATE Users 
                 SET AuthToken = @AuthToken
                 WHERE Id = @Id";
 
-            using (var command = new SqlCommand(query, connection))
-            {
-                command.Parameters.AddWithValue("@Id", userId);
-                command.Parameters.AddWithValue("@AuthToken", authToken);
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Id", userId);
+                    command.Parameters.AddWithValue("@AuthToken", token);
 
-                var result = await command.ExecuteNonQueryAsync();
-                return result > 0;
+                    var result = await command.ExecuteNonQueryAsync();
+                    return result > 0;
+                }
             }
         }
 

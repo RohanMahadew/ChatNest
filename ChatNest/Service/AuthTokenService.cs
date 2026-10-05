@@ -1,5 +1,6 @@
 using ChatNest.Models;
 using ChatNest.Repositories;
+using ChatNest.Repositories.Interface;
 using ChatNest.Service.Interface;
 using System.Security.Cryptography;
 using System.Text;
@@ -8,12 +9,10 @@ namespace ChatNest.Service
 {
     public class AuthTokenService : IAuthTokenInterface
     {
-        private readonly UserRepository _repository;
-        private readonly ISqlConnectionInterface _connectionService;
-        public AuthTokenService(UserRepository userRepository, ISqlConnectionInterface sqlConnectionService)
+        private readonly IUserRepositoryInterface _repository;
+        public AuthTokenService(IUserRepositoryInterface userRepository)
         {
             _repository = userRepository;
-            _connectionService = sqlConnectionService;
         }
 
         private const string TokenKey = "_authtoken";
@@ -45,19 +44,16 @@ namespace ChatNest.Service
             if (!int.TryParse(parts[1], out int userId))
                 return null;
 
-            using (var connection = await _connectionService.GetConnectionAsync())
-            {
-                User user = await _repository.ValidateToken(
-                    connection,
-                    userId,
-                    token
-                );
+            User user = await _repository.ValidateToken(    
+                userId,
+                token
+            );
 
-                if (user == null)
-                    return null;
+            if (user == null)
+                return null;
 
-                return user;
-            }
+            return user;
+            
         }
 
         public string GetAuthTokenFromCookie(HttpRequest request)
@@ -78,13 +74,10 @@ namespace ChatNest.Service
 
         public async Task SetAuthCookie(User user, IHttpContextAccessor httpContextAccessor)
         {
-            using (var connection = await _connectionService.GetConnectionAsync())
-            {
-                var token = GenerateToken(user.Id, user.UserName, user.Email);
-                var cookieOptions = GetCookieOptions();
-                httpContextAccessor.HttpContext!.Response.Cookies.Append("_authtoken", token, cookieOptions);
-                var result = await _repository.InsertAuthToken(connection, user.Id, token);
-            }
+            var token = GenerateToken(user.Id, user.UserName, user.Email);
+            var cookieOptions = GetCookieOptions();
+            httpContextAccessor.HttpContext!.Response.Cookies.Append("_authtoken", token, cookieOptions);
+            var result = await _repository.InsertAuthToken(user.Id, token);
         }
 
         public CookieOptions GetCookieOptions()
