@@ -89,51 +89,6 @@ namespace ChatNest.Repositories
             }
         }
 
-        public async Task<User> ValidateToken(int userId, string token)
-        {
-            using (var connection = await _sqlConnectionService.GetConnectionAsync())
-            {
-                const string query = @"SELECT Id,UserName,NormalizedUserName,Email,NormalizedEmail,PasswordHash,AuthToken,
-                    DateOfBirth,CreatedAt,UpdatedAt FROM Users WHERE Id = @Id AND AuthToken = @AuthToken";
-
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@Id", userId);
-                    command.Parameters.AddWithValue("@AuthToken", token);
-
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        if (await reader.ReadAsync())
-                        {
-                            return MapUserFromReader(reader);
-                        }
-                    }
-                }
-
-                return null;
-            }
-        }
-
-        public async Task<bool> InsertAuthToken(int userId, string token)
-        {
-            using (var connection = await _sqlConnectionService.GetConnectionAsync())
-            {
-                const string query = @"
-                UPDATE Users 
-                SET AuthToken = @AuthToken
-                WHERE Id = @Id";
-
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@Id", userId);
-                    command.Parameters.AddWithValue("@AuthToken", token);
-
-                    var result = await command.ExecuteNonQueryAsync();
-                    return result > 0;
-                }
-            }
-        }
-
         //Map helper
         private User MapUserFromReader(SqlDataReader reader)
         {

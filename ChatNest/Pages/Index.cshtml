@@ -25,6 +25,9 @@
 @if (User.Identity?.IsAuthenticated == true)
 {
     <p>Logged in!</p>
+    <form method="post" asp-page="/Logout">
+        <button type="submit">Log out</button>
+    </form>
 }
 else
 {

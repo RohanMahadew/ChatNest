@@ -1,9 +1,10 @@
 using ChatNest.Models;
-using Microsoft.Extensions.DependencyInjection;
-using ChatNest.Service;
-using ChatNest.Service.Interface;
 using ChatNest.Repositories;
 using ChatNest.Repositories.Interface;
+using ChatNest.Service;
+using ChatNest.Service.Interface;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,14 @@ builder.Services.AddScoped<IUserRepositoryInterface, UserRepository>();
 
 builder.Services.AddHttpContextAccessor();
 
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Login";
+        options.AccessDeniedPath = "/Login";
+    });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -31,6 +40,9 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapStaticAssets();
 app.MapRazorPages()

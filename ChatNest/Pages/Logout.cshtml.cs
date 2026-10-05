@@ -19,9 +19,7 @@ namespace ChatNest.Pages
 
         public async Task<IActionResult> OnPostAsync()
         {
-            //await _authService.SignOutUserAsync();
-            HttpContext httpContext = new DefaultHttpContext();
-            await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignOutAsync();
 
             return RedirectToPage("/Index");
         }

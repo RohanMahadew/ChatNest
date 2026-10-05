@@ -10,8 +10,7 @@ namespace ChatNest.Service
 {
     public class AuthService : IAuthenticationInterface
     {
-        private const string AuthTokenCookieName = "_authtoken";
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private IHttpContextAccessor _httpContextAccessor;
         private readonly IAuthTokenInterface _tokenService;
         private readonly IUserRepositoryInterface _repository;
 
@@ -66,8 +65,8 @@ namespace ChatNest.Service
 
             if (createdUser != null)
             {
-                // Set custom auth cookie
-                await _tokenService.SetAuthCookie(createdUser, _httpContextAccessor);
+                HttpContext httpContext = _httpContextAccessor.HttpContext!;
+                await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, _tokenService.createClaims(user.Id.ToString(), user.NormalizedUserName, user.NormalizedEmail));
             }
                 
             return StoreUserResult.Success();
@@ -90,30 +89,16 @@ namespace ChatNest.Service
                 return AuthenticateUserResult.Failure(LoginFailureReason.InvalidCredentials);
             }
 
-            // Set custom auth cookie
-            //await _tokenService.SetAuthCookie(user, _httpContextAccessor);
             HttpContext httpContext = _httpContextAccessor.HttpContext!;
             await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, _tokenService.createClaims(user.Id.ToString(), user.NormalizedUserName, user.NormalizedEmail));
 
             return AuthenticateUserResult.Success();
         }
 
-        public Task SignOutUserAsync()
+        public async Task SignOutUserAsync()
         {
             // Clear the auth cookie
-            _httpContextAccessor.HttpContext!.Response.Cookies.Delete(AuthTokenCookieName);
-            return Task.CompletedTask;
+            await _httpContextAccessor.HttpContext.SignOutAsync();
         }
-
-        //private async Task SetAuthCookie(User user)
-        //{
-        //    using (var connection = await _connectionService.GetConnectionAsync())
-        //    {
-        //        var token = _tokenService.GenerateToken(user.Id, user.UserName, user.Email);
-        //        var cookieOptions = _tokenService.GetCookieOptions();
-        //        _httpContextAccessor.HttpContext!.Response.Cookies.Append(AuthTokenCookieName, token, cookieOptions);
-        //        var result = await _repository.InsertAuthToken(connection, user.Id, token);
-        //    }
-        //}
     }
 }
