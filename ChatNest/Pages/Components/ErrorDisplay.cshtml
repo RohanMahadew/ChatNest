@@ -1,0 +1,25 @@
+@if (!ViewData.ModelState.IsValid)
+{
+    var fieldErrors = ViewData.ModelState
+        .Where(kvp => kvp.Key != string.Empty)
+        .SelectMany(kvp => kvp.Value.Errors
+            .Select(e => e.ErrorMessage))
+        .ToList();
+
+    var allErrors = fieldErrors.Distinct().ToList();
+
+    if (allErrors.Count > 0)
+    {
+        <div class="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4">
+            <p class="mb-2 text-sm font-semibold text-red-400">
+                Error:
+            </p>
+            <ul class="space-y-1">
+                @foreach (var error in allErrors)
+                {
+                    <li class="text-sm text-red-300">• @error</li>
+                }
+            </ul>
+        </div>
+    }
+}

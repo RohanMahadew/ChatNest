@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using ChatNest.Attributes;
+using System.ComponentModel.DataAnnotations;
 
 namespace ChatNest.Models.DTO
 {
@@ -6,19 +7,23 @@ namespace ChatNest.Models.DTO
     {
         [Required]
         [EmailAddress]
+        [NoSpace]
         [Display(Name = "Email")]
         public string Email { get; set; } = string.Empty;
 
         [Required]
+        [NoSpace]
         [Display(Name = "Username")]
         public string Username { get; set; } = string.Empty;
 
         [Required]
         [DataType(DataType.Date)]
         [Display(Name = "Date of birth")]
+        [MinimumAge(16)]
         public DateOnly? DateOfBirth { get; set; }
 
         [Required]
+        [NoSpace]
         [StringLength(
             100,
             MinimumLength = 6,
@@ -29,6 +34,7 @@ namespace ChatNest.Models.DTO
         public string Password { get; set; } = string.Empty;
 
         [DataType(DataType.Password)]
+        [NoSpace]
         [Display(Name = "Confirm password")]
         [Compare(
             nameof(Password),

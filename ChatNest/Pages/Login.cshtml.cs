@@ -1,6 +1,7 @@
 using ChatNest.Models.DTO;
 using ChatNest.Request.Authentication;
 using ChatNest.Service;
+using ChatNest.Service.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
@@ -9,8 +10,8 @@ namespace ChatNest.Pages
 {
     public class LoginModel : PageModel
     {
-        private readonly AuthService _authService;
-        public LoginModel(AuthService authenticationService)
+        private readonly IAuthenticationInterface _authService;
+        public LoginModel(IAuthenticationInterface authenticationService)
         {
             _authService = authenticationService;
         }
@@ -60,7 +61,7 @@ namespace ChatNest.Pages
             };
 
             ModelState.AddModelError(
-                string.Empty,
+                errorMessage.ToString(),
                 errorMessage);
 
             return Page();

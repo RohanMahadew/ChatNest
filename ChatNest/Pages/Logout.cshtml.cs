@@ -1,4 +1,5 @@
 using ChatNest.Service;
+using ChatNest.Service.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -6,10 +7,10 @@ namespace ChatNest.Pages
 {
     public class LogoutModel : PageModel
     {
-        private readonly AuthService _authService;
+        private readonly IAuthenticationInterface _authService;
         public bool isAuthenticated = false;
 
-        public LogoutModel(AuthService authService)
+        public LogoutModel(IAuthenticationInterface authService)
         {
             _authService = authService;
         }
