@@ -1,9 +1,10 @@
 using ChatNest.Models;
+using ChatNest.Repositories;
+using ChatNest.Repositories.Interface;
 using ChatNest.Request.Authentication;
 using ChatNest.Service.Interface;
-using ChatNest.Repositories;
 using Microsoft.AspNetCore.Authentication;
-using ChatNest.Repositories.Interface;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace ChatNest.Service
 {
@@ -90,7 +91,9 @@ namespace ChatNest.Service
             }
 
             // Set custom auth cookie
-            await _tokenService.SetAuthCookie(user, _httpContextAccessor);
+            //await _tokenService.SetAuthCookie(user, _httpContextAccessor);
+            HttpContext httpContext = _httpContextAccessor.HttpContext!;
+            await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, _tokenService.createClaims(user.Id.ToString(), user.NormalizedUserName, user.NormalizedEmail));
 
             return AuthenticateUserResult.Success();
         }

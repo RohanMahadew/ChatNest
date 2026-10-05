@@ -1,4 +1,5 @@
 ﻿using ChatNest.Models;
+using System.Security.Claims;
 
 namespace ChatNest.Service.Interface
 {
@@ -10,5 +11,6 @@ namespace ChatNest.Service.Interface
         public Task<bool> IsAuthenticated(HttpRequest request);
         public Task SetAuthCookie(User user, IHttpContextAccessor httpContextAccessor);
         public CookieOptions GetCookieOptions();
+        public ClaimsPrincipal createClaims(string userId, string username, string email);
     }
 }

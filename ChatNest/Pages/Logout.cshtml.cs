@@ -1,5 +1,7 @@
 using ChatNest.Service;
 using ChatNest.Service.Interface;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -17,7 +19,9 @@ namespace ChatNest.Pages
 
         public async Task<IActionResult> OnPostAsync()
         {
-            await _authService.SignOutUserAsync();
+            //await _authService.SignOutUserAsync();
+            HttpContext httpContext = new DefaultHttpContext();
+            await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
             return RedirectToPage("/Index");
         }
