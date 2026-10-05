@@ -6,7 +6,7 @@ using System.Text;
 
 namespace ChatNest.Service
 {
-    public class AuthTokenService
+    public class AuthTokenService : IAuthTokenInterface
     {
         private readonly UserRepository _repository;
         private readonly ISqlConnectionInterface _connectionService;
@@ -74,6 +74,17 @@ namespace ChatNest.Service
         public async Task<bool> IsAuthenticated(HttpRequest request)
         {
             return await ValidateUserCookie(request) != null;
+        }
+
+        public async Task SetAuthCookie(User user, IHttpContextAccessor httpContextAccessor)
+        {
+            using (var connection = await _connectionService.GetConnectionAsync())
+            {
+                var token = GenerateToken(user.Id, user.UserName, user.Email);
+                var cookieOptions = GetCookieOptions();
+                httpContextAccessor.HttpContext!.Response.Cookies.Append("_authtoken", token, cookieOptions);
+                var result = await _repository.InsertAuthToken(connection, user.Id, token);
+            }
         }
 
         public CookieOptions GetCookieOptions()

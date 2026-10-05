@@ -10,10 +10,10 @@ var builder = WebApplication.CreateBuilder(args);
 // So far every interface has 1 associated service class. I don't have to write keyed-scoped
 builder.Services.AddRazorPages();
 builder.Services.AddRazorComponents();
-builder.Services.AddScoped<AuthTokenService>();
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<ISqlConnectionInterface, SqlConnectionService>();
 builder.Services.AddScoped<IAuthenticationInterface, AuthService>();
+builder.Services.AddScoped<IAuthTokenInterface, AuthTokenService>();
 
 builder.Services.AddHttpContextAccessor();
 

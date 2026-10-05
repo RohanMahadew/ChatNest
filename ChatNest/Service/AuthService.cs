@@ -10,13 +10,13 @@ namespace ChatNest.Service
     {
         private const string AuthTokenCookieName = "_authtoken";
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly AuthTokenService _tokenService;
+        private readonly IAuthTokenInterface _tokenService;
         private readonly ISqlConnectionInterface _connectionService;
         private readonly UserRepository _repository;
 
         public AuthService(
             IHttpContextAccessor httpContextAccessor,
-            AuthTokenService tokenService,
+            IAuthTokenInterface tokenService,
             UserRepository repository,
             ISqlConnectionInterface connectionService)
         {
@@ -70,7 +70,7 @@ namespace ChatNest.Service
                 if (createdUser != null)
                 {
                     // Set custom auth cookie
-                    await SetAuthCookie(createdUser);
+                    await _tokenService.SetAuthCookie(createdUser, _httpContextAccessor);
                 }
 
                 return StoreUserResult.Success();
@@ -99,7 +99,7 @@ namespace ChatNest.Service
                 }
 
                 // Set custom auth cookie
-                await SetAuthCookie(user);
+                await _tokenService.SetAuthCookie(user, _httpContextAccessor);
 
                 return AuthenticateUserResult.Success();
             }
@@ -112,15 +112,15 @@ namespace ChatNest.Service
             return Task.CompletedTask;
         }
 
-        private async Task SetAuthCookie(User user)
-        {
-            using (var connection = await _connectionService.GetConnectionAsync())
-            {
-                var token = _tokenService.GenerateToken(user.Id, user.UserName, user.Email);
-                var cookieOptions = _tokenService.GetCookieOptions();
-                _httpContextAccessor.HttpContext!.Response.Cookies.Append(AuthTokenCookieName, token, cookieOptions);
-                var result = await _repository.InsertAuthToken(connection, user.Id, token);
-            }
-        }
+        //private async Task SetAuthCookie(User user)
+        //{
+        //    using (var connection = await _connectionService.GetConnectionAsync())
+        //    {
+        //        var token = _tokenService.GenerateToken(user.Id, user.UserName, user.Email);
+        //        var cookieOptions = _tokenService.GetCookieOptions();
+        //        _httpContextAccessor.HttpContext!.Response.Cookies.Append(AuthTokenCookieName, token, cookieOptions);
+        //        var result = await _repository.InsertAuthToken(connection, user.Id, token);
+        //    }
+        //}
     }
 }

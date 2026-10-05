@@ -1,4 +1,5 @@
 using ChatNest.Service;
+using ChatNest.Service.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -6,10 +7,10 @@ namespace ChatNest.Pages
 {
     public class IndexModel : PageModel
     {
-        private readonly AuthTokenService _authTokenService;
+        private readonly IAuthTokenInterface _authTokenService;
         public bool isAuthenticated = false;
 
-        public IndexModel(AuthTokenService authTokenService)
+        public IndexModel(IAuthTokenInterface authTokenService)
         {
             _authTokenService = authTokenService;
         }
