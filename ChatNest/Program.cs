@@ -7,13 +7,13 @@ using ChatNest.Repositories;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+// So far every interface has 1 associated service class. I don't have to write keyed-scoped
 builder.Services.AddRazorPages();
 builder.Services.AddRazorComponents();
-builder.Services.AddScoped<SqlConnectionService>();
 builder.Services.AddScoped<AuthTokenService>();
-builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserRepository>();
-builder.Services.AddScoped<IAuthenticationInterface>(sp => sp.GetRequiredService<AuthService>());
+builder.Services.AddScoped<ISqlConnectionInterface, SqlConnectionService>();
+builder.Services.AddScoped<IAuthenticationInterface, AuthService>();
 
 builder.Services.AddHttpContextAccessor();
 

@@ -1,9 +1,8 @@
 using ChatNest.Models;
 using ChatNest.Request.Authentication;
 using ChatNest.Service.Interface;
-using Microsoft.Data.SqlClient;
-using BCrypt.Net;
 using ChatNest.Repositories;
+using Microsoft.AspNetCore.Authentication;
 
 namespace ChatNest.Service
 {
@@ -12,14 +11,14 @@ namespace ChatNest.Service
         private const string AuthTokenCookieName = "_authtoken";
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly AuthTokenService _tokenService;
-        private readonly SqlConnectionService _connectionService;
+        private readonly ISqlConnectionInterface _connectionService;
         private readonly UserRepository _repository;
 
         public AuthService(
             IHttpContextAccessor httpContextAccessor,
             AuthTokenService tokenService,
             UserRepository repository,
-            SqlConnectionService connectionService)
+            ISqlConnectionInterface connectionService)
         {
             _httpContextAccessor = httpContextAccessor;
             _tokenService = tokenService;

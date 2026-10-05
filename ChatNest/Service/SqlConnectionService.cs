@@ -1,9 +1,10 @@
+using ChatNest.Service.Interface;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace ChatNest.Service
 {
-    public class SqlConnectionService
+    public class SqlConnectionService : ISqlConnectionInterface
     {
         private readonly string _connectionString;
 

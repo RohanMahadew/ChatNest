@@ -1,5 +1,6 @@
 using ChatNest.Models;
 using ChatNest.Repositories;
+using ChatNest.Service.Interface;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -8,8 +9,8 @@ namespace ChatNest.Service
     public class AuthTokenService
     {
         private readonly UserRepository _repository;
-        private readonly SqlConnectionService _connectionService;
-        public AuthTokenService(UserRepository userRepository, SqlConnectionService sqlConnectionService)
+        private readonly ISqlConnectionInterface _connectionService;
+        public AuthTokenService(UserRepository userRepository, ISqlConnectionInterface sqlConnectionService)
         {
             _repository = userRepository;
             _connectionService = sqlConnectionService;
