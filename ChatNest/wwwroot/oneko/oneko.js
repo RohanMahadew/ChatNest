@@ -126,8 +126,6 @@
     nekoEl.style.zIndex = 2147483647;
 
     nekoEl.style.backgroundImage = `url(${nekoFile})`;
-console.log(`url(${nekoFile})`);    
-console.log(document.body);
     
     document.body.appendChild(nekoEl);
 
