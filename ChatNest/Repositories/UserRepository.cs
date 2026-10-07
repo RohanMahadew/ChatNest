@@ -19,7 +19,7 @@ namespace ChatNest.Repositories
         {
             using (var connection = await _sqlConnectionService.GetConnectionAsync())
             {
-                const string query = "SELECT Id, UserName, NormalizedUserName, Email, NormalizedEmail, PasswordHash, Authtoken, DateOfBirth, CreatedAt, UpdatedAt FROM Users WHERE NormalizedUserName = @NormalizedUserName";
+                const string query = "SELECT Id, UserName, NormalizedUserName, Email, NormalizedEmail, PasswordHash, DateOfBirth, CreatedAt, UpdatedAt FROM Users WHERE NormalizedUserName = @NormalizedUserName";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -42,7 +42,7 @@ namespace ChatNest.Repositories
         {
             using (var connection = await _sqlConnectionService.GetConnectionAsync())
             {
-                const string query = "SELECT Id, UserName, NormalizedUserName, Email, NormalizedEmail, PasswordHash, AuthToken, DateOfBirth, CreatedAt, UpdatedAt FROM Users WHERE NormalizedUserName = @NormalizedUserName OR NormalizedEmail = @NormalizedEmail";
+                const string query = "SELECT Id, UserName, NormalizedUserName, Email, NormalizedEmail, PasswordHash, DateOfBirth, CreatedAt, UpdatedAt FROM Users WHERE NormalizedUserName = @NormalizedUserName OR NormalizedEmail = @NormalizedEmail";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -99,12 +99,11 @@ namespace ChatNest.Repositories
                 email: reader.GetString(3),
                 normalizedEmail: reader.GetString(4),
                 passwordHash: reader.GetString(5),
-                authToken: reader[6] as string,
-                dateOfBirth: DateOnly.FromDateTime(reader.GetDateTime(7))
+                dateOfBirth: DateOnly.FromDateTime(reader.GetDateTime(6))
             )
             {
-                CreatedAt = reader.GetDateTime(8),
-                UpdatedAt = reader.GetDateTime(9)
+                CreatedAt = reader.GetDateTime(7),
+                UpdatedAt = reader.GetDateTime(8)
             };
             ;
         }
