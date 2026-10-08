@@ -11,11 +11,9 @@ namespace ChatNest.Models
             Email = string.Empty;
             NormalizedEmail = string.Empty;
             PasswordHash = string.Empty;
-            AuthToken = string.Empty;
         }
 
-
-        public User(int id, string userName, string normalizedUserName, string email, string normalizedEmail, string passwordHash, string authToken, DateOnly dateOfBirth)
+        public User(int id, string userName, string normalizedUserName, string email, string normalizedEmail, string passwordHash, DateOnly dateOfBirth)
         {
             Id = id;
             UserName = userName;
@@ -23,7 +21,6 @@ namespace ChatNest.Models
             Email = email;
             NormalizedEmail = normalizedEmail;
             PasswordHash = passwordHash;
-            AuthToken = authToken;
             DateOfBirth = dateOfBirth;
         }
 
@@ -33,7 +30,7 @@ namespace ChatNest.Models
         public string Email { get; set; }
         public string NormalizedEmail { get; set; }
         public string PasswordHash { get; set; }
-        public string AuthToken { get; set; }
         public DateOnly DateOfBirth { get; set; }
+
     }
 }
