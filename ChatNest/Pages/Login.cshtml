@@ -14,29 +14,8 @@
                submit-text="Sign in"
                has-account="false">
 
-<partial name="Components/ErrorDisplay" />
-
-<partial name="Components/AuthInput"
-         view-data='new ViewDataDictionary(ViewData)
-         {
-             ["Id"] = "Username",
-             ["Label"] = "Username",
-             ["Type"] = "text",
-             ["Autocomplete"] = "username",
-             ["Placeholder"] = "enter-your-username",
-             ["Required"] = true
-         }' />
-
-<partial name="Components/AuthInput"
-         view-data='new ViewDataDictionary(ViewData)
-         {
-             ["Id"] = "Password",
-             ["Label"] = "Password",
-             ["Type"] = "password",
-             ["Autocomplete"] = "new-password",
-             ["Placeholder"] = "••••••••••••",
-             ["Required"] = true
-         }' />
+    <auth-input asp-for="Input.Username" />
+    <auth-input asp-for="Input.Password" />
 
 </register-form>
 

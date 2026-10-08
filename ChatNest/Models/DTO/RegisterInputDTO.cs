@@ -5,13 +5,13 @@ namespace ChatNest.Models.DTO
 {
     public class RegisterInputDTO
     {
-        [Required]
-        [EmailAddress]
+        [Required (ErrorMessage = "Email is required")]
+        [EmailAddress (ErrorMessage = "The email address is not valid")]
         [NoSpace]
         [Display(Name = "Email")]
         public string Email { get; set; } = string.Empty;
 
-        [Required]
+        [Required (ErrorMessage = "Username is required")]
         [NoSpace]
         [Display(Name = "Username")]
         public string Username { get; set; } = string.Empty;

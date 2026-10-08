@@ -14,6 +14,7 @@ namespace ChatNest.Models
             AuthToken = string.Empty;
         }
 
+
         public User(int id, string userName, string normalizedUserName, string email, string normalizedEmail, string passwordHash, string authToken, DateOnly dateOfBirth)
         {
             Id = id;
