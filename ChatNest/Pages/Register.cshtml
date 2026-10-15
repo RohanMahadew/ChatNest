@@ -3,91 +3,44 @@
 @{
     ViewData["Title"] = "Register";
 }
+
 <partial name="Components/AuthHero"/>
 
 <register-form action="#" method="post">
-    <partial name="Components/ErrorDisplay" />
+    <auth-input asp-for="Input.Email" />
+    <auth-input asp-for="Input.Username" />
+    <auth-input asp-for="Input.DateOfBirth" />
+    <auth-input asp-for="Input.Password" />
+    <auth-input asp-for="Input.ConfirmPassword" />
 
-            <partial name="Components/AuthInput"
-                     view-data='new ViewDataDictionary(ViewData)
-                     {
-                         ["Id"] = "Email",
-                         ["Label"] = "Email address",
-                         ["Type"] = "email",
-                         ["Autocomplete"] = "email",
-                         ["Placeholder"] = "you@example.com",
-                         ["Required"] = true
-                     }' />
+    <label
+        for="terms"
+        class="flex cursor-pointer items-start gap-3 rounded-lg
+            border border-white/5 bg-white/[0.025] p-3.5
+            transition hover:border-white/10 hover:bg-white/[0.04]"
+    >
+        <input
+            type="checkbox"
+            id="terms"
+            name="terms"
+            required
+            class="mt-0.5 h-4 w-4 shrink-0 cursor-pointer
+                rounded border-white/20 bg-white/10
+                accent-[#603273] focus:ring-2 focus:ring-[#a875bc]"
+        />
 
-            <partial name="Components/AuthInput"
-                     view-data='new ViewDataDictionary(ViewData)
-                     {
-                         ["Id"] = "Username",
-                         ["Label"] = "Username",
-                         ["Type"] = "text",
-                         ["Autocomplete"] = "username",
-                         ["Placeholder"] = "choose-a-username",
-                         ["Required"] = true
-                     }' />
-
-            <partial name="Components/AuthInput"
-                     view-data='new ViewDataDictionary(ViewData)
-                     {
-             ["Id"] = "DateOfBirth",
-                         ["Label"] = "Date of birth",
-                         ["Type"] = "date",
-                         ["Autocomplete"] = "bday",
-                         ["Required"] = true
-                     }' />
-
-            <partial name="Components/AuthInput"
-                     view-data='new ViewDataDictionary(ViewData)
-                     {
-                         ["Id"] = "Password",
-                         ["Label"] = "Password",
-                         ["Type"] = "password",
-                         ["Autocomplete"] = "new-password",
-                         ["Placeholder"] = "••••••••••••",
-                         ["Required"] = true
-                     }' />
-
-            <partial name="Components/AuthInput"
-                     view-data='new ViewDataDictionary(ViewData)
-                     {
-                         ["Id"] = "ConfirmPassword",
-                         ["Label"] = "Confirm password",
-                         ["Type"] = "password",
-                         ["Autocomplete"] = "new-password",
-                         ["Placeholder"] = "••••••••••••",
-                         ["Required"] = true
-                     }' />
-
-                <label
-                    for="terms"
-                    class="flex cursor-pointer items-start gap-3 rounded-lg
-                           border border-white/5 bg-white/[0.025] p-3.5
-                           transition hover:border-white/10 hover:bg-white/[0.04]"
-                >
-                    <input
-                        type="checkbox"
-                        id="terms"
-                        name="terms"
-                        required
-                        class="mt-0.5 h-4 w-4 shrink-0 cursor-pointer
-                               rounded border-white/20 bg-white/10
-                               accent-[#603273] focus:ring-2 focus:ring-[#a875bc]"
-                    />
-
-                    <span class="text-xs leading-5 text-white/50">
-                        I agree to the
-                        <a href="#" class="font-semibold text-[#c79bd5] hover:text-white">
-                            terms of service
-                        </a>
-                        and acknowledge the privacy policy.
-                    </span>
-                </label>
-            </register-form>
+        <span class="text-xs leading-5 text-white/50">I agree to the 
+            <a href="#" class="font-semibold text-[#c79bd5] hover:text-white">terms of service</a>
+            and acknowledge the privacy policy.
+        </span>
+    </label> 
+</register-form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/validation/nospace.js"></script>
+    <script src="~/js/validation/minimumage.js"></script>
+
+    <script src="~/js/input/datetimeinput.js"></script>
+    <script>window.addEventListener('load', initDateInput("Input_DateOfBirth", 16));</script>
 }

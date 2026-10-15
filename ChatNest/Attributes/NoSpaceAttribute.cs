@@ -1,26 +1,48 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.ComponentModel.DataAnnotations;
 
 namespace ChatNest.Attributes
 {
-    public class NoSpaceAttribute : ValidationAttribute
+    public class NoSpaceAttribute : ValidationAttribute, IClientModelValidator
     {
-        public NoSpaceAttribute() {
+        private const string DefaultErrorMessage = "The field {0} cannot contain spaces.";
 
-        }
+        public NoSpaceAttribute() : base(DefaultErrorMessage) { }
 
         protected override ValidationResult? IsValid(
             object? value,
             ValidationContext validationContext)
-        {             
-            if (value is string str)
+        {
+            if (value is string str && str.Contains(' '))
             {
-                if (str.Contains(' '))
-                {
-                    string? failedPropertyName = validationContext.MemberName;
-                    return new ValidationResult($"The field {failedPropertyName} cannot contain spaces.");
-                }
+                return new ValidationResult(FormatErrorMessage(validationContext.DisplayName));
             }
+
             return ValidationResult.Success;
+        }
+
+        public void AddValidation(ClientModelValidationContext context)
+        {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
+            // Client-Side Validation
+            MergeAttribute(context.Attributes, "data-val", "true");
+            MergeAttribute(context.Attributes, "data-val-nospace", FormatErrorMessage(context.ModelMetadata.GetDisplayName()));
+        }
+
+        private static bool MergeAttribute(IDictionary<string, string> attributes, string key, string value)
+        {
+            if (attributes.ContainsKey(key))
+            {
+                return false;
+            }
+
+            attributes.Add(key, value);
+            return true;
         }
     }
 }

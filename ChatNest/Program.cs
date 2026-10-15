@@ -1,10 +1,9 @@
-using ChatNest.Models;
+using ChatNest.Hubs;
 using ChatNest.Repositories;
 using ChatNest.Repositories.Interface;
 using ChatNest.Service;
 using ChatNest.Service.Interface;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +18,7 @@ builder.Services.AddScoped<IUserRepositoryInterface, UserRepository>();
 
 builder.Services.AddHttpContextAccessor();
 
+// Cookies
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -26,6 +26,9 @@ builder.Services
         options.LoginPath = "/Login";
         options.AccessDeniedPath = "/Login";
     });
+
+// SignalR
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -45,6 +48,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
+
+// SignalR Hub
+app.MapHub<TestHub>("/testHub");
+app.MapHub<ChatHub>("/chatHub");
+
 app.MapRazorPages()
    .WithStaticAssets();
 
