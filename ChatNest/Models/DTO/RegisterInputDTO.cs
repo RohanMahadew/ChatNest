@@ -6,8 +6,8 @@ namespace ChatNest.Models.DTO
     public class RegisterInputDTO
     {
         [Required (ErrorMessage = "Email is required")]
+        [NoSpace(ErrorMessage = "The email address cannot contain spaces")]
         [EmailAddress (ErrorMessage = "The email address is not valid")]
-        [NoSpace (ErrorMessage = "The email address cannot contain spaces")]
         [Display(Name = "Email")]
         public string Email { get; set; } = string.Empty;
 
