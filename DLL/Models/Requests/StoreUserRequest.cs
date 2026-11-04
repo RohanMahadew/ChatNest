@@ -4,7 +4,7 @@ using System.Text;
 
 namespace BLL.Models.Requests
 {
-    sealed record StoreUserRequest(
+    public sealed record StoreUserRequest(
         string Email,
         string UserName, 
         DateOnly DateOfBirth,

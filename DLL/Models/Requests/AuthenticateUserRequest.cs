@@ -4,7 +4,7 @@ using System.Text;
 
 namespace BLL.Models.Requests
 {
-    sealed record AuthenticateUserRequest(
+    public sealed record AuthenticateUserRequest(
         string UserName,
         string Password
     );

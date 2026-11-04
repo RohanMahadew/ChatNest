@@ -3,45 +3,96 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - PL</title>
+    <title>@ViewData["Title"] - ChatNest</title>
     <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/PL.styles.css" asp-append-version="true" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    @* <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" /> *@
+    @* <link rel="stylesheet" href="~/ChatNest.styles.css" asp-append-version="true" /> *@
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">PL</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+<body class="min-h-screen w-full overflow-x-hidden bg-[#070f2d] text-white antialiased">    
+    <!-- Background Cat -->
+    <script src="~/oneko/oneko.js"></script>
+
+    <!-- Background -->
+    <div class="pointer-events-none fixed inset-0 -z-10">
+
+      <!-- Base gradient -->
+      <div class="absolute inset-0 bg-gradient-to-br from-[#091a50] via-[#11183d] to-[#170f2b]"></div>
+
+      <!-- Purple glow -->
+      <div
+        class="absolute -left-32 bottom-[-180px] h-[520px] w-[520px]
+               rounded-full bg-[#603273]/30 blur-[120px]"
+      ></div>
+
+      <!-- Blue glow -->
+      <div
+        class="absolute right-[-100px] top-[20%] h-[420px] w-[420px]
+               rounded-full bg-[#173c91]/25 blur-[110px]"
+      ></div>
+
+      <!-- Grid -->
+      <div
+        class="absolute inset-0 opacity-[0.055]
+               bg-[linear-gradient(rgba(255,255,255,0.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.7)_1px,transparent_1px)]
+               bg-[size:45px_45px]"
+      ></div>
+      <div class="absolute left-[8%] top-[22%] h-2 w-2 rounded-full bg-white/20"></div>
+      <div class="absolute left-[14%] top-[62%] h-1.5 w-1.5 rounded-full bg-purple-300/30"></div>
+      <div class="absolute right-[16%] top-[18%] h-2 w-2 rounded-full bg-blue-300/20"></div>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - PL - <a asp-area="" asp-page="/Privacy">Privacy</a>
+    <!-- Header and Nav -->
+    <header class="relative z-20 border-b border-white/10 bg-[#091a50]/70 backdrop-blur-md">
+      <nav
+        class="mx-auto flex h-[72px] max-w-7xl items-center justify-between
+               px-5 sm:px-8 lg:px-12"
+        aria-label="Main navigation"
+      >
+        <a
+          asp-page="/Index"
+          class="group flex items-center gap-2 text-xl font-bold tracking-tight sm:text-2xl"
+        >
+          <span
+            class="flex h-8 w-8 items-center justify-center rounded-lg
+                   bg-[#603273] text-sm shadow-lg shadow-purple-950/30
+                   transition duration-300 group-hover:scale-105"
+          >
+            C
+          </span>
+
+          <span>
+            Chat<span class="text-[#b98acb]">Nest</span>
+          </span>
+        </a>
+
+        <div class="flex items-center gap-2 text-sm sm:gap-5 sm:text-base">
+          <a
+            asp-page="/TestPage"
+            class="rounded-lg px-3 py-2 font-semibold text-white
+                   transition hover:bg-white/10"
+          >TestPage</a>
+
+          <a
+            asp-page="/Login"
+            class="rounded-lg px-3 py-2 font-semibold text-white
+                   transition hover:bg-white/10"
+          >Login</a>
+
+          <a
+            asp-page="/Register"
+            class="rounded-lg px-3 py-2 font-semibold text-white
+                   transition hover:bg-white/10"
+          >Register</a>
         </div>
-    </footer>
+
+      </nav>
+    </header>
+
+    <!-- Page Content -->
+<main class="relative z-10 mx-auto grid min-h-[calc(100vh-72px)] max-w-7xl lg:grid-cols-2">
+    @RenderBody()
+</main>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

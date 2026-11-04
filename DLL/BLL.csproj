@@ -7,6 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Core" Version="1.6.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication" Version="2.3.13" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.3.13" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Core" Version="2.3.13" />
+    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="10.0.14" />
+    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.3.13" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.13" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\BLL\DLL.csproj" />
   </ItemGroup>
 

@@ -1,6 +1,5 @@
 <Solution>
   <Project Path="BLL/DLL.csproj" Id="0ccf330e-89f6-4628-98e3-ac8e2484ff7d" />
-  <Project Path="ChatNest/ChatNest.csproj" />
   <Project Path="DAL/DAL.csproj" Id="1598d863-1f88-4d9a-8a46-903685fd3f1e" />
   <Project Path="DLL/BLL.csproj" Id="d2cb82e4-b2e6-4e8e-b9a1-836f55414ea5" />
   <Project Path="PL/PL.csproj" Id="88629104-2abf-4ee8-ab17-073efa507244" />

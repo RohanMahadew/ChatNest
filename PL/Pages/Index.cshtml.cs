@@ -5,9 +5,8 @@ namespace PL.Pages
 {
     public class IndexModel : PageModel
     {
-        public void OnGet()
+        public async Task OnGet()
         {
-
         }
     }
 }
