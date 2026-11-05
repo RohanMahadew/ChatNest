@@ -17,6 +17,29 @@ namespace DAL.Repositories
             _SqlConnection = sqlConnection;
         }
 
+        public async Task<User?> FindUserById(int userId)
+        {
+            using (var connection = await _SqlConnection.GetConnectionAsync())
+            {
+                const string query = "SELECT Id, UserName, Email, PasswordHash, DateOfBirth, CreatedAt, UpdatedAt FROM Users WHERE Id = @UserId";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@UserId", userId);
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            return MapUserFromReader(reader);
+                        }
+                    }
+                }
+
+                return null;
+            }
+        }
+
         public async Task<User?> FindUserByUsername(string username)
         {
             using (var connection = await _SqlConnection.GetConnectionAsync())
@@ -62,6 +85,36 @@ namespace DAL.Repositories
 
                 return null;
             }
+        }
+
+        public async Task<List<User>> SearchUsersByUsernameOrEmail(string searchQuery, int excludedUserId)
+        {
+            var users = new List<User>();
+
+            using (var connection = await _SqlConnection.GetConnectionAsync())
+            {
+                const string query = "SELECT Id, UserName FROM dbo.Users WHERE (UserName LIKE @SearchPattern OR Email LIKE @SearchPattern) AND Id <> @ExcludedUserId ORDER BY UserName";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.Add("@SearchPattern", System.Data.SqlDbType.NVarChar, 322).Value = $"%{searchQuery}%";
+                    command.Parameters.AddWithValue("@ExcludedUserId", excludedUserId);
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            users.Add(new User
+                            {
+                                Id = reader.GetInt32(0),
+                                UserName = reader.GetString(1)
+                            });
+                        }
+                    }
+                }
+            }
+
+            return users;
         }
 
         public async Task<bool> Store(User user)

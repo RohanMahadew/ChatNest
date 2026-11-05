@@ -1,0 +1,26 @@
+<div id="addFriendModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4 backdrop-blur-sm transition-opacity duration-200" aria-hidden="true">
+    <div class="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#091a50]/95 p-6 shadow-2xl backdrop-blur-2xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="addContactHeading">
+        <button type="button" data-action="close-add-contact" class="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg text-white/50 transition hover:bg-white/10 hover:text-white" aria-label="Close dialog"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+        <div class="mb-5">
+            <span class="text-xs font-bold uppercase tracking-widest text-[#b98acb]">Find Contacts</span>
+            <h3 id="addContactHeading" class="mt-1 text-xl font-bold tracking-tight text-white">Start a New Conversation</h3>
+            <p class="mt-1 text-xs text-white/50">Search for users by their ChatNest handle or email address.</p>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label for="newUsername" class="mb-1.5 block text-xs font-semibold text-white/80">Username or Email</label>
+                <input type="search" id="newUsername" maxlength="320" autocomplete="off" placeholder="e.g. JohnDoe" aria-describedby="userSearchStatus" class="h-10 w-full rounded-xl border border-white/10 bg-white/[0.07] px-3.5 text-xs text-white outline-none transition placeholder:text-white/25 focus:border-[#a875bc] focus:ring-2 focus:ring-[#603273]/40 sm:text-sm" />
+            </div>
+            <form method="post" asp-page="/TestPage" asp-page-handler="StartDirectChat" id="startDirectChatForm">
+                <input type="hidden" name="targetUserId" id="targetUserId" />
+                <div class="max-h-60 overflow-y-auto rounded-xl border border-white/10 bg-white/[0.03] p-2" aria-live="polite">
+                    <p id="userSearchStatus" class="px-2 py-4 text-center text-xs text-white/50">Enter a username or email to find users.</p>
+                    <ul id="userSearchResults" class="space-y-1"></ul>
+                </div>
+                <div class="mt-6 flex gap-2.5">
+                    <button type="button" data-action="close-add-contact" class="flex-1 rounded-xl border border-white/10 bg-white/[0.05] py-2.5 text-xs font-semibold text-white/70 transition hover:bg-white/10 hover:text-white">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

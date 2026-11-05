@@ -15,4 +15,16 @@
     <ProjectReference Include="..\BLL\DLL.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Migrations\000_CreateMigrationsTable.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Migrations\001_CreateSchema.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Migrations\999_DropAll.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

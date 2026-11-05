@@ -19,11 +19,12 @@ namespace BLL.Models
             Type = type;
         }
 
-        public Channel(int id, string uuid, ChannelType type, DateTime createdAt, DateTime updatedAt)
+        public Channel(int id, string uuid, ChannelType type, string? name, DateTime createdAt, DateTime updatedAt)
         {
             Id = id;
             Uuid = uuid;
             Type = type;
+            Name = name;
             CreatedAt = createdAt;
             UpdatedAt = updatedAt;
         }
@@ -31,6 +32,7 @@ namespace BLL.Models
         public int Id { get; set; }
         public string Uuid { get; set; }
         public ChannelType Type { get; set; }
+        public string? Name { get; set; }
         public DateTime CreatedAt { get; }
         public DateTime UpdatedAt { get; }
 
