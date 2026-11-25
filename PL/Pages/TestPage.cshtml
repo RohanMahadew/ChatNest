@@ -19,11 +19,59 @@
             </div>
             <partial name="Components/MessageComposer" />
         </div>
+        @if (Model.SelectedGroup is not null)
+        {
+            var groupName = Model.SelectedGroup.Name ?? "Private group";
+            <section id="activeGroupView" class="flex h-full w-full flex-col">
+                <div class="flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-[#091a50]/65 px-4 backdrop-blur-xl sm:px-6">
+                    <div class="flex items-center gap-3">
+                        <button type="button" data-action="show-contacts" class="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.05] text-white/70 hover:text-white md:hidden" aria-label="Show contacts">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                        </button>
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-gradient-to-tr from-[#603273] to-[#a875bc] text-sm font-bold text-white shadow-md">@groupName.Substring(0, Math.Min(2, groupName.Length)).ToUpperInvariant()</div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-sm font-bold tracking-tight text-white">@groupName</h3>
+                                <span class="rounded-full border border-[#a875bc]/40 bg-[#603273]/30 px-2 py-0.5 text-[10px] text-[#c79bd5]">Private group</span>
+                            </div>
+                            <p class="text-xs font-medium text-white/50">Group channel</p>
+                        </div>
+                    </div>
+                    @if (Model.SelectedGroup.Role == "SuperAdmin")
+                    {
+                        <button type="button" data-action="invite-to-group" data-group-uuid="@Model.SelectedGroup.Uuid" class="rounded-lg bg-[#603273] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#75418b]">Add users</button>
+                    }
+                </div>
+                @if (Model.SelectedGroup.Role == "Invited")
+                {
+                    <div class="flex flex-1 flex-col items-center justify-center gap-5 p-6 text-center">
+                        <p class="text-sm text-white/70">You have been invited to join <strong class="text-white">@groupName</strong>.</p>
+                        <div class="flex gap-3">
+                            <form method="post" asp-page-handler="RespondToGroupInvitation">
+                                <input type="hidden" name="uuid" value="@Model.SelectedGroup.Uuid" />
+                                <button type="submit" name="accept" value="true" class="rounded-xl bg-[#603273] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[#75418b]">Join</button>
+                            </form>
+                            <form method="post" asp-page-handler="RespondToGroupInvitation">
+                                <input type="hidden" name="uuid" value="@Model.SelectedGroup.Uuid" />
+                                <button type="submit" name="accept" value="false" class="rounded-xl border border-white/10 px-5 py-2.5 text-xs font-semibold text-white/70 transition hover:bg-white/10">Deny</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="flex flex-1 items-center justify-center p-6 text-center">
+                        <p class="text-xs text-white/40">This group is empty. No chat history to show.</p>
+                    </div>
+                }
+            </section>
+        }
         <partial name="Components/EmptyChat" />
     </section>
 </div>
 
 <partial name="Components/AddContactModal" />
+<partial name="Components/CreateGroupModal" />
 <partial name="Components/ToastNotification" />
 
 @section Scripts {

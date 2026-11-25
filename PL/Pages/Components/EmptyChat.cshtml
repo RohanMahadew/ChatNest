@@ -1,8 +1,9 @@
 @using BLL.Models.DTOs
 @{
     var hasSelectedDirectMessage = ViewData["SelectedDirectMessage"] is ChannelDTO;
+    var hasSelectedGroup = ViewData["SelectedGroup"] is GroupChannelDTO;
 }
-<div id="emptyChatView" class="@(hasSelectedDirectMessage ? "hidden h-full flex-1 flex-col items-center justify-center p-6 text-center sm:p-12" : "flex h-full flex-1 flex-col items-center justify-center p-6 text-center sm:p-12")">
+<div id="emptyChatView" class="@(hasSelectedDirectMessage || hasSelectedGroup ? "hidden h-full flex-1 flex-col items-center justify-center p-6 text-center sm:p-12" : "flex h-full flex-1 flex-col items-center justify-center p-6 text-center sm:p-12")">
     <div class="mx-auto max-w-md space-y-6">
         <div class="relative mx-auto h-24 w-24">
             <div class="absolute inset-0 animate-pulse rounded-2xl bg-[#603273]/40 blur-xl"></div>
