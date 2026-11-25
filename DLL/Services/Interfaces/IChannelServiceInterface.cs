@@ -13,5 +13,6 @@ namespace BLL.Services.Interfaces
         Task<GroupChannelDTO?> GetPrivateGroupForUserAsync(string uuid, int userId);
         Task<bool> InviteUserToPrivateGroupAsync(string uuid, int creatorId, int targetUserId);
         Task<bool> RespondToPrivateGroupInvitationAsync(string uuid, int userId, bool accept);
+        Task<ChannelDTO?> GetChatChannelForUserAsync(string uuid, int userId);
     }
 }

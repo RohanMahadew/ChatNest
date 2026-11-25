@@ -19,6 +19,7 @@ namespace BLL.Repositories.Interfaces
         public Task<Channel?> CreatePrivateGroupAsync(Channel channel, int creatorId);
         public Task<List<ChannelMembership>> FindPrivateGroupsForUserAsync(int userId);
         public Task<ChannelMembership?> FindPrivateGroupForUserAsync(string uuid, int userId);
+        public Task<ChannelMembership?> FindChatChannelForUserAsync(string uuid, int userId);
         public Task<bool> InviteUserToPrivateGroupAsync(string uuid, int creatorId, int targetUserId);
         public Task<bool> RespondToPrivateGroupInvitationAsync(string uuid, int userId, bool accept);
         public Task<Models.Channel?> Store(Models.Channel channel);

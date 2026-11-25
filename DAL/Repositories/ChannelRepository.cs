@@ -234,6 +234,27 @@ namespace DAL.Repositories
             return memberships.FirstOrDefault();
         }
 
+        public async Task<ChannelMembership?> FindChatChannelForUserAsync(string uuid, int userId)
+        {
+            using var connection = await _SqlConnection.GetConnectionAsync();
+            const string query = @"SELECT c.Id, c.Uuid, c.Type, c.Name, c.CreatedAt, c.UpdatedAt, cu.ChannelRole
+                FROM dbo.Channels c
+                INNER JOIN dbo.ChannelUsers cu ON cu.ChannelId = c.Id
+                WHERE c.Uuid = @Uuid AND cu.UserId = @UserId
+                    AND c.Type IN (@DirectType, @PrivateType)";
+
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@Uuid", uuid);
+            command.Parameters.AddWithValue("@UserId", userId);
+            command.Parameters.AddWithValue("@DirectType", (int)ChannelType.DIRECT);
+            command.Parameters.AddWithValue("@PrivateType", (int)ChannelType.PRIVATE);
+
+            using var reader = await command.ExecuteReaderAsync();
+            return await reader.ReadAsync()
+                ? new ChannelMembership(MapChannelFromReader(reader), (ChannelRole)(int)reader["ChannelRole"])
+                : null;
+        }
+
         public async Task<bool> InviteUserToPrivateGroupAsync(string uuid, int creatorId, int targetUserId)
         {
             if (creatorId <= 0 || targetUserId <= 0 || creatorId == targetUserId)

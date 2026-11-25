@@ -1,4 +1,13 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var isFullWidth = ViewData["FullWidth"] as bool? == true;
+    var navContainerClass = isFullWidth
+        ? "flex h-[72px] w-full items-center justify-between px-5 sm:px-8 lg:px-12"
+        : "mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-12";
+    var mainClass = isFullWidth
+        ? "relative z-10 min-h-[calc(100vh-72px)] w-full"
+        : "relative z-10 mx-auto grid min-h-[calc(100vh-72px)] max-w-7xl lg:grid-cols-2";
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -45,8 +54,7 @@
     <!-- Header and Nav -->
     <header class="relative z-20 border-b border-white/10 bg-[#091a50]/70 backdrop-blur-md">
       <nav
-        class="mx-auto flex h-[72px] max-w-7xl items-center justify-between
-               px-5 sm:px-8 lg:px-12"
+        class="@navContainerClass"
         aria-label="Main navigation"
       >
         <a
@@ -90,7 +98,7 @@
     </header>
 
     <!-- Page Content -->
-<main class="relative z-10 mx-auto grid min-h-[calc(100vh-72px)] max-w-7xl lg:grid-cols-2">
+<main class="@mainClass">
     @RenderBody()
 </main>
 

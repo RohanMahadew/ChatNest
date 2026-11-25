@@ -84,7 +84,10 @@ namespace BLL.Services
             }
 
             var memberships = await _channelRepository.FindPrivateGroupsForUserAsync(userId);
-            return memberships.Select(membership => ToGroupChannelDTO(membership.Channel, membership.Role)).ToList();
+            return memberships
+                .Where(membership => IsVisibleGroupRole(membership.Role))
+                .Select(membership => ToGroupChannelDTO(membership.Channel, membership.Role))
+                .ToList();
         }
 
         public async Task<GroupChannelDTO?> GetPrivateGroupForUserAsync(string uuid, int userId)
@@ -95,7 +98,9 @@ namespace BLL.Services
             }
 
             var membership = await _channelRepository.FindPrivateGroupForUserAsync(channelUuid.ToString("D"), userId);
-            return membership is null ? null : ToGroupChannelDTO(membership.Channel, membership.Role);
+            return membership is null || !IsVisibleGroupRole(membership.Role)
+                ? null
+                : ToGroupChannelDTO(membership.Channel, membership.Role);
         }
 
         public async Task<bool> InviteUserToPrivateGroupAsync(string uuid, int creatorId, int targetUserId)
@@ -122,9 +127,37 @@ namespace BLL.Services
                 channelUuid.ToString("D"), userId, accept);
         }
 
+        public async Task<ChannelDTO?> GetChatChannelForUserAsync(string uuid, int userId)
+        {
+            if (userId <= 0 || !Guid.TryParse(uuid, out var channelUuid))
+            {
+                return null;
+            }
+
+            var membership = await _channelRepository.FindChatChannelForUserAsync(channelUuid.ToString("D"), userId);
+            if (membership is null)
+            {
+                return null;
+            }
+
+            var isActiveMember = membership.Channel.Type switch
+            {
+                ChannelType.DIRECT => membership.Role == ChannelRole.DirectMessage,
+                ChannelType.PRIVATE => membership.Role is ChannelRole.Member or ChannelRole.Admin or ChannelRole.SuperAdmin,
+                _ => false
+            };
+
+            return isActiveMember ? ChannelDTOExtensions.fromChannel(membership.Channel) : null;
+        }
+
         private static GroupChannelDTO ToGroupChannelDTO(Channel channel, ChannelRole role)
         {
             return new GroupChannelDTO(channel.Id, channel.Uuid, channel.Name, role.ToString());
+        }
+
+        private static bool IsVisibleGroupRole(ChannelRole role)
+        {
+            return role is ChannelRole.Invited or ChannelRole.Member or ChannelRole.Admin or ChannelRole.SuperAdmin;
         }
     }
 }

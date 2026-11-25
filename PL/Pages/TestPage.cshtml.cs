@@ -22,6 +22,7 @@ namespace PL.Pages
         public ChannelDTO? SelectedDirectMessage { get; private set; }
         public List<GroupChannelDTO> PrivateGroups { get; private set; } = [];
         public GroupChannelDTO? SelectedGroup { get; private set; }
+        public int CurrentUserId { get; private set; }
 
         public async Task<IActionResult> OnGetAsync(string? uuid)
         {
@@ -29,6 +30,7 @@ namespace PL.Pages
             {
                 return Challenge();
             }
+            CurrentUserId = currentUserId;
 
             DirectMessages = await _channelService.GetDirectChatsForUserAsync(currentUserId);
             PrivateGroups = await _channelService.GetPrivateGroupsForUserAsync(currentUserId);

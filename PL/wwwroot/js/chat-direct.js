@@ -143,7 +143,6 @@ document.getElementById('startDirectChatForm').addEventListener('click', event =
         document.getElementById('targetUserId').value = button.dataset.userId;
     }
 });
-document.getElementById('messageForm').addEventListener('submit', event => event.preventDefault());
 document.getElementById('addFriendModal').addEventListener('click', event => {
     if (event.target === event.currentTarget) closeAddContactModal();
 });
