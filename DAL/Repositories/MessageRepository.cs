@@ -33,7 +33,7 @@ namespace DAL.Repositories
 
         public Task<List<Message?>> FindByChannel(int ChannelId)
         {
-            const string query = "SELECT Id, UserId, ChannelId, MessageStatus, Content, CreatedAt, UpdatedAt FROM Messages WHERE ChannelId = @ChannelId";
+            const string query = "SELECT Id, UserId, ChannelId, MessageStatus, Content, CreatedAt, UpdatedAt FROM Messages WHERE ChannelId = @ChannelId ORDER BY CreatedAt, Id";
             return FindMessages(query, "@ChannelId", ChannelId);
         }
 
@@ -98,10 +98,11 @@ namespace DAL.Repositories
         {
             using (var connection = await _SqlConnection.GetConnectionAsync())
             {
-                const string query = @"INSERT INTO Messages
+                const string query = @"DECLARE @Now datetime2(7) = SYSDATETIME();
+                    INSERT INTO Messages
                     (UserId, ChannelId, MessageStatus, Content, CreatedAt, UpdatedAt)
                     OUTPUT INSERTED.Id, INSERTED.UserId, INSERTED.ChannelId, INSERTED.MessageStatus, INSERTED.Content, INSERTED.CreatedAt, INSERTED.UpdatedAt
-                    VALUES (@UserId, @ChannelId, @MessageStatus, @Content, GETDATE(), GETDATE())";
+                    VALUES (@UserId, @ChannelId, @MessageStatus, @Content, @Now, @Now)";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -128,7 +129,7 @@ namespace DAL.Repositories
             using (var connection = await _SqlConnection.GetConnectionAsync())
             {
                 const string query = @"UPDATE Messages
-                    SET UserId = @UserId, ChannelId = @ChannelId, MessageStatus = @MessageStatus, Content = @Content, UpdatedAt = GETDATE()
+                    SET UserId = @UserId, ChannelId = @ChannelId, MessageStatus = @MessageStatus, Content = @Content, UpdatedAt = SYSDATETIME()
                     OUTPUT INSERTED.Id, INSERTED.UserId, INSERTED.ChannelId, INSERTED.MessageStatus, INSERTED.Content, INSERTED.CreatedAt, INSERTED.UpdatedAt
                     WHERE Id = @MessageId";
 

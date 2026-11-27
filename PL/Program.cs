@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using PL.App;
 using PL.App.Migrations;
+using PL.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,10 +17,13 @@ builder.Services.AddRazorPages();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuthenticationServiceInterface, AuthenticationService>();
 builder.Services.AddScoped<IChannelServiceInterface, ChannelService>();
+builder.Services.AddScoped<IMessageServiceInterface, MessageService>();
 builder.Services.AddScoped<IUserServiceInterface, UserService>();
 builder.Services.AddScoped<IChannelRepositoryInterface, ChannelRepository>();
+builder.Services.AddScoped<IMessageRepositoryInterface, MessageRepository>();
 builder.Services.AddScoped<IUserRepositoryInterface, UserRepository>();
 builder.Services.AddScoped<ISqlConnectionInterface, SqlConnectionEngine>();
+builder.Services.AddSignalR();
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie();
@@ -48,6 +52,7 @@ app.UseAuthorization();
 app.MapStaticAssets();
 app.MapRazorPages()
    .WithStaticAssets();
+app.MapHub<ChatHub>("/chatHub").RequireAuthorization();
 
 // This can probably be improved; but running a full MVVM page is overkill for a simple search endpoint
 // Then, implementing an API layer is a bit out of the scope of this project, so this is a compromise for now

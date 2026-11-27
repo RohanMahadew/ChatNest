@@ -168,6 +168,179 @@ namespace DAL.Repositories
             return channels.FirstOrDefault();
         }
 
+        public async Task<Channel?> CreatePrivateGroupAsync(Channel channel, int creatorId)
+        {
+            if (channel.Type != ChannelType.PRIVATE
+                || creatorId <= 0
+                || string.IsNullOrWhiteSpace(channel.Uuid)
+                || string.IsNullOrWhiteSpace(channel.Name))
+            {
+                throw new ArgumentException("A private group requires a UUID, name, and creator.");
+            }
+
+            using var connection = await _SqlConnection.GetConnectionAsync();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                const string insertChannelQuery = @"INSERT INTO dbo.Channels (Uuid, Type, Name, CreatedAt, UpdatedAt)
+                    OUTPUT INSERTED.Id, INSERTED.Uuid, INSERTED.Type, INSERTED.Name, INSERTED.CreatedAt, INSERTED.UpdatedAt
+                    VALUES (@Uuid, @Type, @Name, SYSUTCDATETIME(), SYSUTCDATETIME())";
+
+                Channel? createdChannel;
+                using (var command = new SqlCommand(insertChannelQuery, connection, transaction))
+                {
+                    command.Parameters.AddWithValue("@Uuid", channel.Uuid);
+                    command.Parameters.AddWithValue("@Type", (int)ChannelType.PRIVATE);
+                    command.Parameters.AddWithValue("@Name", channel.Name);
+
+                    using var reader = await command.ExecuteReaderAsync();
+                    createdChannel = await reader.ReadAsync() ? MapChannelFromReader(reader) : null;
+                }
+
+                if (createdChannel is null)
+                {
+                    throw new InvalidOperationException("The private group could not be created.");
+                }
+
+                const string insertCreatorQuery = @"INSERT INTO dbo.ChannelUsers (UserId, ChannelId, ChannelRole, CreatedAt, UpdatedAt)
+                    VALUES (@CreatorId, @ChannelId, @SuperAdminRole, SYSUTCDATETIME(), SYSUTCDATETIME())";
+                using (var command = new SqlCommand(insertCreatorQuery, connection, transaction))
+                {
+                    command.Parameters.AddWithValue("@CreatorId", creatorId);
+                    command.Parameters.AddWithValue("@ChannelId", createdChannel.Id);
+                    command.Parameters.AddWithValue("@SuperAdminRole", (int)ChannelRole.SuperAdmin);
+                    await command.ExecuteNonQueryAsync();
+                }
+
+                await transaction.CommitAsync();
+                return createdChannel;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public Task<List<ChannelMembership>> FindPrivateGroupsForUserAsync(int userId)
+        {
+            return FindPrivateGroupMembershipsAsync(userId, null);
+        }
+
+        public async Task<ChannelMembership?> FindPrivateGroupForUserAsync(string uuid, int userId)
+        {
+            var memberships = await FindPrivateGroupMembershipsAsync(userId, uuid);
+            return memberships.FirstOrDefault();
+        }
+
+        public async Task<ChannelMembership?> FindChatChannelForUserAsync(string uuid, int userId)
+        {
+            using var connection = await _SqlConnection.GetConnectionAsync();
+            const string query = @"SELECT c.Id, c.Uuid, c.Type, c.Name, c.CreatedAt, c.UpdatedAt, cu.ChannelRole
+                FROM dbo.Channels c
+                INNER JOIN dbo.ChannelUsers cu ON cu.ChannelId = c.Id
+                WHERE c.Uuid = @Uuid AND cu.UserId = @UserId
+                    AND c.Type IN (@DirectType, @PrivateType)";
+
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@Uuid", uuid);
+            command.Parameters.AddWithValue("@UserId", userId);
+            command.Parameters.AddWithValue("@DirectType", (int)ChannelType.DIRECT);
+            command.Parameters.AddWithValue("@PrivateType", (int)ChannelType.PRIVATE);
+
+            using var reader = await command.ExecuteReaderAsync();
+            return await reader.ReadAsync()
+                ? new ChannelMembership(MapChannelFromReader(reader), (ChannelRole)(int)reader["ChannelRole"])
+                : null;
+        }
+
+        public async Task<bool> InviteUserToPrivateGroupAsync(string uuid, int creatorId, int targetUserId)
+        {
+            if (creatorId <= 0 || targetUserId <= 0 || creatorId == targetUserId)
+            {
+                return false;
+            }
+
+            using var connection = await _SqlConnection.GetConnectionAsync();
+            using var transaction = connection.BeginTransaction(System.Data.IsolationLevel.Serializable);
+
+            try
+            {
+                const string findChannelQuery = @"SELECT c.Id
+                    FROM dbo.Channels c WITH (UPDLOCK, HOLDLOCK)
+                    INNER JOIN dbo.ChannelUsers creator ON creator.ChannelId = c.Id
+                        AND creator.UserId = @CreatorId AND creator.ChannelRole = @SuperAdminRole
+                    WHERE c.Uuid = @Uuid AND c.Type = @PrivateType";
+
+                int? channelId;
+                using (var command = new SqlCommand(findChannelQuery, connection, transaction))
+                {
+                    command.Parameters.AddWithValue("@Uuid", uuid);
+                    command.Parameters.AddWithValue("@CreatorId", creatorId);
+                    command.Parameters.AddWithValue("@SuperAdminRole", (int)ChannelRole.SuperAdmin);
+                    command.Parameters.AddWithValue("@PrivateType", (int)ChannelType.PRIVATE);
+                    var result = await command.ExecuteScalarAsync();
+                    channelId = result is null || result is DBNull ? null : Convert.ToInt32(result);
+                }
+
+                if (channelId is null)
+                {
+                    await transaction.RollbackAsync();
+                    return false;
+                }
+
+                const string insertInviteQuery = @"INSERT INTO dbo.ChannelUsers (UserId, ChannelId, ChannelRole, CreatedAt, UpdatedAt)
+                    SELECT @TargetUserId, @ChannelId, @InvitedRole, SYSUTCDATETIME(), SYSUTCDATETIME()
+                    WHERE NOT EXISTS (SELECT 1 FROM dbo.ChannelUsers WITH (UPDLOCK, HOLDLOCK)
+                        WHERE UserId = @TargetUserId AND ChannelId = @ChannelId)";
+                int inserted;
+                using (var command = new SqlCommand(insertInviteQuery, connection, transaction))
+                {
+                    command.Parameters.AddWithValue("@TargetUserId", targetUserId);
+                    command.Parameters.AddWithValue("@ChannelId", channelId.Value);
+                    command.Parameters.AddWithValue("@InvitedRole", (int)ChannelRole.Invited);
+                    inserted = await command.ExecuteNonQueryAsync();
+                }
+
+                await transaction.CommitAsync();
+                return inserted > 0;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task<bool> RespondToPrivateGroupInvitationAsync(string uuid, int userId, bool accept)
+        {
+            const string updateQuery = @"UPDATE cu
+                SET ChannelRole = @MemberRole, UpdatedAt = SYSUTCDATETIME()
+                FROM dbo.ChannelUsers cu
+                INNER JOIN dbo.Channels c ON c.Id = cu.ChannelId
+                WHERE c.Uuid = @Uuid AND c.Type = @PrivateType
+                    AND cu.UserId = @UserId AND cu.ChannelRole = @InvitedRole";
+            const string deleteQuery = @"DELETE cu
+                FROM dbo.ChannelUsers cu
+                INNER JOIN dbo.Channels c ON c.Id = cu.ChannelId
+                WHERE c.Uuid = @Uuid AND c.Type = @PrivateType
+                    AND cu.UserId = @UserId AND cu.ChannelRole = @InvitedRole";
+
+            using var connection = await _SqlConnection.GetConnectionAsync();
+            using var command = new SqlCommand(accept ? updateQuery : deleteQuery, connection);
+            command.Parameters.AddWithValue("@Uuid", uuid);
+            command.Parameters.AddWithValue("@PrivateType", (int)ChannelType.PRIVATE);
+            command.Parameters.AddWithValue("@UserId", userId);
+            command.Parameters.AddWithValue("@InvitedRole", (int)ChannelRole.Invited);
+            if (accept)
+            {
+                command.Parameters.AddWithValue("@MemberRole", (int)ChannelRole.Member);
+            }
+
+            return await command.ExecuteNonQueryAsync() > 0;
+        }
+
         public async Task<Channel?> Store(Channel channel)
         {
             using (var connection = await _SqlConnection.GetConnectionAsync())
@@ -224,6 +397,42 @@ namespace DAL.Repositories
 
                 return null;
             }
+        }
+
+        private async Task<List<ChannelMembership>> FindPrivateGroupMembershipsAsync(int userId, string? uuid)
+        {
+            var memberships = new List<ChannelMembership>();
+            var query = @"SELECT c.Id, c.Uuid, c.Type, c.Name, c.CreatedAt, c.UpdatedAt, cu.ChannelRole
+                FROM dbo.Channels c
+                INNER JOIN dbo.ChannelUsers cu ON cu.ChannelId = c.Id AND cu.UserId = @UserId
+                WHERE c.Type = @PrivateType";
+            if (uuid is not null)
+            {
+                query += " AND c.Uuid = @Uuid";
+            }
+            query += " ORDER BY CASE WHEN cu.ChannelRole = @InvitedRole THEN 0 ELSE 1 END, c.Name";
+
+            using (var connection = await _SqlConnection.GetConnectionAsync())
+            using (var command = new SqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@UserId", userId);
+                command.Parameters.AddWithValue("@PrivateType", (int)ChannelType.PRIVATE);
+                command.Parameters.AddWithValue("@InvitedRole", (int)ChannelRole.Invited);
+                if (uuid is not null)
+                {
+                    command.Parameters.AddWithValue("@Uuid", uuid);
+                }
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    memberships.Add(new ChannelMembership(
+                        MapChannelFromReader(reader),
+                        (ChannelRole)(int)reader["ChannelRole"]));
+                }
+            }
+
+            return memberships;
         }
 
         private async Task<List<Channel?>> FindChannels(string query, int userId, int? channelRole = null)
