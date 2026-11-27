@@ -37,7 +37,7 @@ namespace BLL.Services
             var currentMember = new ChannelUser(currentUserId, 0, ChannelRole.DirectMessage);
             var targetMember = new ChannelUser(targetUserId, 0, ChannelRole.DirectMessage);
             var directChannel = await _channelRepository.GetOrCreateDirectChannelAsync(channel, currentMember, targetMember)
-                ?? throw new InvalidOperationException("The direct chat could not be created.");
+                ?? throw new InvalidOperationException("This direct chat is blocked or could not be created.");
             return ChannelDTOExtensions.fromChannel(directChannel) with { Name = targetUser.UserName };
         }
 
@@ -51,6 +51,16 @@ namespace BLL.Services
         {
             var channel = await _channelRepository.FindDirectChannelForUserAsync(uuid, userId);
             return channel is null ? null : ChannelDTOExtensions.fromChannel(channel);
+        }
+
+        public async Task<bool> BlockDirectChatAsync(string uuid, int userId)
+        {
+            if (userId <= 0 || !Guid.TryParse(uuid, out var channelUuid))
+            {
+                return false;
+            }
+
+            return await _channelRepository.BlockDirectChannelAsync(channelUuid.ToString("D"), userId);
         }
 
         public async Task<GroupChannelDTO> CreatePrivateGroupAsync(int creatorId, string name)
@@ -116,18 +126,24 @@ namespace BLL.Services
                 channelUuid.ToString("D"), creatorId, targetUserId);
         }
 
-        public async Task<bool> RespondToPrivateGroupInvitationAsync(string uuid, int userId, bool accept)
+        public async Task<bool> RespondToPrivateGroupInvitationAsync(string uuid, int userId, GroupInvitationAction action)
         {
-            if (userId <= 0 || !Guid.TryParse(uuid, out var channelUuid))
+            if (userId <= 0 || !Enum.IsDefined(action) || !Guid.TryParse(uuid, out var channelUuid))
             {
                 return false;
             }
 
             return await _channelRepository.RespondToPrivateGroupInvitationAsync(
-                channelUuid.ToString("D"), userId, accept);
+                channelUuid.ToString("D"), userId, action);
         }
 
         public async Task<ChannelDTO?> GetChatChannelForUserAsync(string uuid, int userId)
+        {
+            var membership = await GetChatMembershipForUserAsync(uuid, userId);
+            return membership is null ? null : ChannelDTOExtensions.fromChannel(membership.Channel);
+        }
+
+        public async Task<ChannelMembership?> GetChatMembershipForUserAsync(string uuid, int userId)
         {
             if (userId <= 0 || !Guid.TryParse(uuid, out var channelUuid))
             {
@@ -143,16 +159,135 @@ namespace BLL.Services
             var isActiveMember = membership.Channel.Type switch
             {
                 ChannelType.DIRECT => membership.Role == ChannelRole.DirectMessage,
-                ChannelType.PRIVATE => membership.Role is ChannelRole.Member or ChannelRole.Admin or ChannelRole.SuperAdmin,
+                ChannelType.PRIVATE or ChannelType.PUBLIC => membership.Role is ChannelRole.Member or ChannelRole.Admin or ChannelRole.SuperAdmin,
                 _ => false
             };
 
-            return isActiveMember ? ChannelDTOExtensions.fromChannel(membership.Channel) : null;
+            return isActiveMember ? membership : null;
+        }
+
+        public async Task<List<ChannelMemberDTO>> GetChannelMembersAsync(string uuid, int userId)
+        {
+            var membership = await GetChatMembershipForUserAsync(uuid, userId);
+            if (membership is null)
+            {
+                return [];
+            }
+
+            var members = await _channelRepository.FindChannelMembersAsync(membership.Channel.Id);
+            return members
+                .Select(member => new ChannelMemberDTO(
+                    member.UserId,
+                    member.UserName,
+                    member.Role.ToString(),
+                    (int)member.Role))
+                .ToList();
+        }
+
+        public async Task<ChannelRole?> GetUserRoleInChannelAsync(int channelId, int userId)
+        {
+            if (channelId <= 0 || userId <= 0)
+            {
+                return null;
+            }
+
+            return await _channelRepository.FindUserRoleInChannelAsync(channelId, userId);
+        }
+
+        public async Task<bool> PromoteGroupMemberAsync(string uuid, int actorUserId, int targetUserId)
+        {
+            if (actorUserId <= 0 || targetUserId <= 0 || actorUserId == targetUserId || !Guid.TryParse(uuid, out var channelUuid))
+            {
+                return false;
+            }
+
+            return await _channelRepository.UpdateGroupMemberRoleAsync(
+                channelUuid.ToString("D"), actorUserId, targetUserId, ChannelRole.Admin);
+        }
+
+        public async Task<bool> DemoteGroupMemberAsync(string uuid, int actorUserId, int targetUserId)
+        {
+            if (actorUserId <= 0 || targetUserId <= 0 || actorUserId == targetUserId || !Guid.TryParse(uuid, out var channelUuid))
+            {
+                return false;
+            }
+
+            return await _channelRepository.UpdateGroupMemberRoleAsync(
+                channelUuid.ToString("D"), actorUserId, targetUserId, ChannelRole.Member);
+        }
+
+        public async Task<bool> RemoveGroupMemberAsync(string uuid, int actorUserId, int targetUserId)
+        {
+            if (actorUserId <= 0 || targetUserId <= 0 || actorUserId == targetUserId || !Guid.TryParse(uuid, out var channelUuid))
+            {
+                return false;
+            }
+
+            return await _channelRepository.RemoveGroupMemberAsync(
+                channelUuid.ToString("D"), actorUserId, targetUserId);
+        }
+
+        public async Task<bool> BlockGroupMemberAsync(string uuid, int actorUserId, int targetUserId)
+        {
+            if (actorUserId <= 0 || targetUserId <= 0 || actorUserId == targetUserId || !Guid.TryParse(uuid, out var channelUuid))
+            {
+                return false;
+            }
+
+            return await _channelRepository.BlockGroupMemberAsync(
+                channelUuid.ToString("D"), actorUserId, targetUserId);
+        }
+
+        public async Task<ChannelType?> ToggleGroupVisibilityAsync(string uuid, int actorUserId)
+        {
+            if (actorUserId <= 0 || !Guid.TryParse(uuid, out var channelUuid))
+            {
+                return null;
+            }
+
+            var normalizedUuid = channelUuid.ToString("D");
+            var membership = await _channelRepository.FindPrivateGroupForUserAsync(normalizedUuid, actorUserId);
+            if (membership is null || membership.Role != ChannelRole.SuperAdmin)
+            {
+                return null;
+            }
+
+            var targetType = membership.Channel.Type == ChannelType.PUBLIC
+                ? ChannelType.PRIVATE
+                : ChannelType.PUBLIC;
+            return await _channelRepository.SetGroupVisibilityAsync(normalizedUuid, actorUserId, targetType);
+        }
+
+        public async Task<List<PublicGroupDTO>> SearchPublicGroupsAsync(string searchQuery, int userId)
+        {
+            if (userId <= 0 || string.IsNullOrWhiteSpace(searchQuery) || searchQuery.Length > 320)
+            {
+                return [];
+            }
+
+            var groups = await _channelRepository.SearchPublicGroupsAsync(searchQuery.Trim(), userId);
+            return groups
+                .Select(match => new PublicGroupDTO(
+                    match.Channel.Id,
+                    match.Channel.Uuid,
+                    match.Channel.Name ?? "Public group",
+                    match.Role is ChannelRole.Member or ChannelRole.Admin or ChannelRole.SuperAdmin))
+                .ToList();
+        }
+
+        public async Task<bool> JoinPublicGroupAsync(string uuid, int userId)
+        {
+            if (userId <= 0 || !Guid.TryParse(uuid, out var channelUuid))
+            {
+                return false;
+            }
+
+            return await _channelRepository.JoinPublicGroupAsync(channelUuid.ToString("D"), userId);
         }
 
         private static GroupChannelDTO ToGroupChannelDTO(Channel channel, ChannelRole role)
         {
-            return new GroupChannelDTO(channel.Id, channel.Uuid, channel.Name, role.ToString());
+            return new GroupChannelDTO(channel.Id, channel.Uuid, channel.Name, role.ToString(), channel.Type.ToString());
         }
 
         private static bool IsVisibleGroupRole(ChannelRole role)

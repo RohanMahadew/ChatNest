@@ -21,7 +21,16 @@ namespace BLL.Repositories.Interfaces
         public Task<ChannelMembership?> FindPrivateGroupForUserAsync(string uuid, int userId);
         public Task<ChannelMembership?> FindChatChannelForUserAsync(string uuid, int userId);
         public Task<bool> InviteUserToPrivateGroupAsync(string uuid, int creatorId, int targetUserId);
-        public Task<bool> RespondToPrivateGroupInvitationAsync(string uuid, int userId, bool accept);
+        public Task<bool> RespondToPrivateGroupInvitationAsync(string uuid, int userId, GroupInvitationAction action);
+        public Task<bool> BlockDirectChannelAsync(string uuid, int userId);
+        public Task<List<ChannelMember>> FindChannelMembersAsync(int channelId);
+        public Task<ChannelRole?> FindUserRoleInChannelAsync(int channelId, int userId);
+        public Task<bool> UpdateGroupMemberRoleAsync(string uuid, int actorUserId, int targetUserId, ChannelRole targetRole);
+        public Task<bool> RemoveGroupMemberAsync(string uuid, int actorUserId, int targetUserId);
+        public Task<bool> BlockGroupMemberAsync(string uuid, int actorUserId, int targetUserId);
+        public Task<ChannelType?> SetGroupVisibilityAsync(string uuid, int actorUserId, ChannelType targetType);
+        public Task<List<PublicGroupMatch>> SearchPublicGroupsAsync(string searchQuery, int userId);
+        public Task<bool> JoinPublicGroupAsync(string uuid, int userId);
         public Task<Models.Channel?> Store(Models.Channel channel);
         public Task<Models.Channel?> Update(Models.Channel channel);
         public Task<bool> Delete(int Channelid);

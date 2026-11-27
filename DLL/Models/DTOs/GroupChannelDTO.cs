@@ -4,6 +4,7 @@ namespace BLL.Models.DTOs
         int Id,
         string Uuid,
         string? Name,
-        string Role
+        string Role,
+        string Type = "PRIVATE"
     );
 }

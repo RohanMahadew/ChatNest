@@ -13,7 +13,7 @@
         {
         <div id="activeChatView" class="flex h-full w-full flex-col">
             <partial name="Components/ActiveChatHeader" />
-            <div id="messagesContainer" data-message-list data-channel-uuid="@Model.SelectedDirectMessage?.Uuid" data-current-user-id="@Model.CurrentUserId" class="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
+            <div id="messagesContainer" data-message-list data-channel-uuid="@Model.SelectedDirectMessage?.Uuid" data-current-user-id="@Model.CurrentUserId" data-is-group="false" class="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
                 <p data-empty-messages class="py-12 text-center text-xs text-white/40">No messages yet.</p>
             </div>
             <div id="typingIndicator" class="hidden items-center gap-2 px-6 py-1.5 text-xs text-white/50">
@@ -25,9 +25,16 @@
         }
         @if (Model.SelectedGroup is not null)
         {
-            var groupName = Model.SelectedGroup.Name ?? "Private group";
+            var groupName = Model.SelectedGroup.Name ?? "Group";
+            var isPublicGroup = Model.SelectedGroup.Type == "PUBLIC";
+            var currentUserRole = Model.SelectedGroup.Role;
+            var isSuperAdmin = currentUserRole == "SuperAdmin";
+            var isAdmin = currentUserRole == "Admin";
+            var activeMembers = Model.ChannelMembers.Where(m => m.Role is "SuperAdmin" or "Admin" or "Member").ToList();
+            var invitedMembers = Model.ChannelMembers.Where(m => m.Role == "Invited").ToList();
+            var blockedMembers = Model.ChannelMembers.Where(m => m.Role == "Banned").ToList();
             <section id="activeGroupView" class="flex h-full w-full flex-col">
-                <div class="flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-[#091a50]/65 px-4 backdrop-blur-xl sm:px-6">
+                <div class="relative z-30 flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-[#091a50]/65 px-4 backdrop-blur-xl sm:px-6">
                     <div class="flex items-center gap-3">
                         <button type="button" data-action="show-contacts" class="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.05] text-white/70 hover:text-white md:hidden" aria-label="Show contacts">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
@@ -36,35 +43,154 @@
                         <div>
                             <div class="flex items-center gap-2">
                                 <h3 class="text-sm font-bold tracking-tight text-white">@groupName</h3>
-                                <span class="rounded-full border border-[#a875bc]/40 bg-[#603273]/30 px-2 py-0.5 text-[10px] text-[#c79bd5]">Private group</span>
+                                <span class="rounded-full border border-[#a875bc]/40 bg-[#603273]/30 px-2 py-0.5 text-[10px] text-[#c79bd5]">@(isPublicGroup ? "Public group" : "Private group")</span>
                             </div>
-                            <p class="text-xs font-medium text-white/50">Group channel</p>
+                            <p class="text-xs font-medium text-white/50">Group channel · @activeMembers.Count @(activeMembers.Count == 1 ? "member" : "members")</p>
                         </div>
                     </div>
-                    @if (Model.SelectedGroup.Role == "SuperAdmin")
+                    @if (currentUserRole != "Invited")
                     {
-                        <button type="button" data-action="invite-to-group" data-group-uuid="@Model.SelectedGroup.Uuid" class="rounded-lg bg-[#603273] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#75418b]">Add users</button>
+                        <div class="relative flex items-center gap-2">
+                            @if (!isPublicGroup && (isSuperAdmin || isAdmin))
+                            {
+                                <button type="button" data-action="invite-to-group" data-group-uuid="@Model.SelectedGroup.Uuid" class="rounded-lg bg-[#603273] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#75418b]">Add users</button>
+                            }
+                            <button type="button" data-action="toggle-channel-menu" aria-expanded="false" aria-controls="channelContextMenu" class="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.05] text-white/80 transition hover:border-[#a875bc]/50 hover:bg-white/10 hover:text-white" aria-label="Open group menu">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                            </button>
+                            <div id="channelContextMenu" class="absolute right-0 top-12 z-40 hidden max-h-[75vh] w-80 overflow-y-auto rounded-2xl border border-white/15 bg-[#091a50]/95 p-4 shadow-2xl backdrop-blur-2xl sm:w-96">
+                                <div class="mb-3 flex items-center justify-between gap-2 border-b border-white/10 pb-3">
+                                    <div>
+                                        <p class="text-xs font-bold uppercase tracking-wider text-[#c79bd5]">Group Info</p>
+                                        <p class="text-[11px] text-white/50">@(isPublicGroup ? "Public group — anyone can search & join" : "Private group — invite only")</p>
+                                    </div>
+                                    @if (isSuperAdmin)
+                                    {
+                                        <form method="post" asp-page-handler="ToggleGroupVisibility">
+                                            <input type="hidden" name="uuid" value="@Model.SelectedGroup.Uuid" />
+                                            <button type="submit" class="shrink-0 rounded-lg border border-[#a875bc]/40 bg-[#603273]/50 px-2.5 py-1.5 text-[11px] font-semibold text-white transition hover:bg-[#75418b]">
+                                                @(isPublicGroup ? "Make Private" : "Make Public")
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+
+                                <div class="space-y-2">
+                                    <p class="text-[11px] font-bold uppercase tracking-wider text-white/50">Members (@activeMembers.Count)</p>
+                                    <ul class="space-y-2">
+                                        @foreach (var member in activeMembers)
+                                        {
+                                            var isSelf = member.UserId == Model.CurrentUserId;
+                                            var canSuperAdminAct = isSuperAdmin && !isSelf && member.Role != "SuperAdmin";
+                                            var canAdminAct = isAdmin && !isSelf && member.Role == "Member";
+                                            <li class="rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <div class="min-w-0">
+                                                        <span class="block truncate text-xs font-semibold text-white">@@@member.UserName @(isSelf ? "(You)" : string.Empty)</span>
+                                                        <span class="text-[10px] font-medium text-[#c79bd5]">@member.Role</span>
+                                                    </div>
+                                                    @if (canSuperAdminAct || canAdminAct)
+                                                    {
+                                                        <div class="flex flex-wrap items-center justify-end gap-1">
+                                                            @if (canSuperAdminAct && member.Role == "Member")
+                                                            {
+                                                                <form method="post" asp-page-handler="PromoteGroupMember">
+                                                                    <input type="hidden" name="uuid" value="@Model.SelectedGroup.Uuid" />
+                                                                    <input type="hidden" name="targetUserId" value="@member.UserId" />
+                                                                    <button type="submit" class="rounded-md border border-[#a875bc]/40 bg-[#603273]/40 px-2 py-1 text-[10px] font-semibold text-white transition hover:bg-[#75418b]">Promote</button>
+                                                                </form>
+                                                            }
+                                                            @if (canSuperAdminAct && member.Role == "Admin")
+                                                            {
+                                                                <form method="post" asp-page-handler="DemoteGroupMember">
+                                                                    <input type="hidden" name="uuid" value="@Model.SelectedGroup.Uuid" />
+                                                                    <input type="hidden" name="targetUserId" value="@member.UserId" />
+                                                                    <button type="submit" class="rounded-md border border-white/15 bg-white/[0.06] px-2 py-1 text-[10px] font-semibold text-white/80 transition hover:bg-white/15">Demote</button>
+                                                                </form>
+                                                            }
+                                                            <form method="post" asp-page-handler="RemoveGroupMember">
+                                                                <input type="hidden" name="uuid" value="@Model.SelectedGroup.Uuid" />
+                                                                <input type="hidden" name="targetUserId" value="@member.UserId" />
+                                                                <button type="submit" class="rounded-md border border-white/15 bg-white/[0.06] px-2 py-1 text-[10px] font-semibold text-white/80 transition hover:bg-white/15">Remove</button>
+                                                            </form>
+                                                            <form method="post" asp-page-handler="BlockGroupMember">
+                                                                <input type="hidden" name="uuid" value="@Model.SelectedGroup.Uuid" />
+                                                                <input type="hidden" name="targetUserId" value="@member.UserId" />
+                                                                <button type="submit" class="rounded-md border border-rose-400/30 bg-rose-500/15 px-2 py-1 text-[10px] font-semibold text-rose-200 transition hover:bg-rose-500/30">Block</button>
+                                                            </form>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+
+                                @if ((isSuperAdmin || isAdmin) && invitedMembers.Count > 0)
+                                {
+                                    <div class="mt-4 space-y-2 border-t border-white/10 pt-3">
+                                        <p class="text-[11px] font-bold uppercase tracking-wider text-white/50">Invited (@invitedMembers.Count)</p>
+                                        <ul class="space-y-1.5">
+                                            @foreach (var member in invitedMembers)
+                                            {
+                                                <li class="flex items-center justify-between gap-2 rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2">
+                                                    <span class="truncate text-xs font-medium text-white/80">@@@member.UserName</span>
+                                                    <div class="flex items-center gap-1">
+                                                        <form method="post" asp-page-handler="RemoveGroupMember">
+                                                            <input type="hidden" name="uuid" value="@Model.SelectedGroup.Uuid" />
+                                                            <input type="hidden" name="targetUserId" value="@member.UserId" />
+                                                            <button type="submit" class="rounded-md border border-white/15 bg-white/[0.06] px-2 py-1 text-[10px] font-semibold text-white/80 transition hover:bg-white/15">Remove</button>
+                                                        </form>
+                                                        <form method="post" asp-page-handler="BlockGroupMember">
+                                                            <input type="hidden" name="uuid" value="@Model.SelectedGroup.Uuid" />
+                                                            <input type="hidden" name="targetUserId" value="@member.UserId" />
+                                                            <button type="submit" class="rounded-md border border-rose-400/30 bg-rose-500/15 px-2 py-1 text-[10px] font-semibold text-rose-200 transition hover:bg-rose-500/30">Block</button>
+                                                        </form>
+                                                    </div>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+
+                                @if ((isSuperAdmin || isAdmin) && blockedMembers.Count > 0)
+                                {
+                                    <div class="mt-4 space-y-2 border-t border-white/10 pt-3">
+                                        <p class="text-[11px] font-bold uppercase tracking-wider text-rose-300/80">Blocked (@blockedMembers.Count)</p>
+                                        <ul class="space-y-1.5">
+                                            @foreach (var member in blockedMembers)
+                                            {
+                                                <li class="flex items-center justify-between gap-2 rounded-xl border border-rose-400/15 bg-rose-500/5 px-3 py-2">
+                                                    <span class="truncate text-xs font-medium text-rose-100/80">@@@member.UserName</span>
+                                                    <form method="post" asp-page-handler="RemoveGroupMember">
+                                                        <input type="hidden" name="uuid" value="@Model.SelectedGroup.Uuid" />
+                                                        <input type="hidden" name="targetUserId" value="@member.UserId" />
+                                                        <button type="submit" class="rounded-md border border-white/15 bg-white/[0.06] px-2 py-1 text-[10px] font-semibold text-white/80 transition hover:bg-white/15">Unblock</button>
+                                                    </form>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                            </div>
+                        </div>
                     }
                 </div>
                 @if (Model.SelectedGroup.Role == "Invited")
                 {
                     <div class="flex flex-1 flex-col items-center justify-center gap-5 p-6 text-center">
                         <p class="text-sm text-white/70">You have been invited to join <strong class="text-white">@groupName</strong>.</p>
-                        <div class="flex gap-3">
-                            <form method="post" asp-page-handler="RespondToGroupInvitation">
-                                <input type="hidden" name="uuid" value="@Model.SelectedGroup.Uuid" />
-                                <button type="submit" name="accept" value="true" class="rounded-xl bg-[#603273] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[#75418b]">Join</button>
-                            </form>
-                            <form method="post" asp-page-handler="RespondToGroupInvitation">
-                                <input type="hidden" name="uuid" value="@Model.SelectedGroup.Uuid" />
-                                <button type="submit" name="accept" value="false" class="rounded-xl border border-white/10 px-5 py-2.5 text-xs font-semibold text-white/70 transition hover:bg-white/10">Deny</button>
-                            </form>
-                        </div>
+                        <form method="post" asp-page-handler="RespondToGroupInvitation" class="flex gap-3">
+                            <input type="hidden" name="uuid" value="@Model.SelectedGroup.Uuid" />
+                            <button type="submit" name="action" value="join" class="rounded-xl bg-[#603273] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[#75418b]">Join</button>
+                            <button type="submit" name="action" value="deny" class="rounded-xl border border-white/10 px-5 py-2.5 text-xs font-semibold text-white/70 transition hover:bg-white/10">Deny</button>
+                            <button type="submit" name="action" value="block" class="rounded-xl border border-rose-400/30 bg-rose-500/15 px-5 py-2.5 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/30">Block</button>
+                        </form>
                     </div>
                 }
                 else
                 {
-                    <div id="messagesContainer" data-message-list data-channel-uuid="@Model.SelectedGroup.Uuid" data-current-user-id="@Model.CurrentUserId" class="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
+                    <div id="messagesContainer" data-message-list data-channel-uuid="@Model.SelectedGroup.Uuid" data-current-user-id="@Model.CurrentUserId" data-current-user-role="@Model.SelectedGroup.Role" data-is-group="true" class="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
                         <p data-empty-messages class="py-12 text-center text-xs text-white/40">No messages yet.</p>
                     </div>
                     <partial name="Components/MessageComposer" />

@@ -9,12 +9,13 @@
         string Content,
         DateTime CreatedAt,
         DateTime UpdatedAt,
-        bool IsEdited
+        bool IsEdited,
+        string? SenderRole = null
     );
 
     public static class MessageDTOExtensions
     {
-        public static MessageDTO FromMessage(Message message, string? senderName = null)
+        public static MessageDTO FromMessage(Message message, string? senderName = null, string? senderRole = null)
         {
             var resolvedSenderName = string.IsNullOrWhiteSpace(senderName)
                 ? $"User {message.UserId}"
@@ -29,7 +30,8 @@
                 message.Content,
                 message.CreatedAt,
                 message.UpdatedAt,
-                message.UpdatedAt > message.CreatedAt
+                message.UpdatedAt > message.CreatedAt,
+                senderRole
             );
         }
     }

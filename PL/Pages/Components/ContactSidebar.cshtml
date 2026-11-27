@@ -2,10 +2,17 @@
 @{
     var directMessages = ViewData["DirectMessages"] as IReadOnlyList<ChannelDTO> ?? [];
     var privateGroups = ViewData["PrivateGroups"] as IReadOnlyList<GroupChannelDTO> ?? [];
+    var invitedGroups = privateGroups.Where(group => group.Role == "Invited").ToList();
+    var joinedGroups = privateGroups.Where(group => group.Role != "Invited").ToList();
     var selectedDirectMessage = ViewData["SelectedDirectMessage"] as ChannelDTO;
     var selectedGroup = ViewData["SelectedGroup"] as GroupChannelDTO;
+    var explicitActiveTab = ViewData["ActiveTab"] as string;
+    var initialTab = explicitActiveTab ?? (selectedGroup is not null ? "groups" : "dm");
+    string TabClass(string tab) => initialTab == tab
+        ? "flex-1 rounded-md bg-[#603273] py-1 text-center text-xs font-semibold text-white shadow-sm transition"
+        : "flex-1 rounded-md py-1 text-center text-xs font-medium text-white/60 transition hover:bg-white/[0.05] hover:text-white";
 }
-<aside id="sidebarSection" class="flex h-full w-full shrink-0 flex-col border-r border-white/10 bg-[#091a50]/60 backdrop-blur-2xl transition-all duration-300 md:w-80 lg:w-96">
+<aside id="sidebarSection" data-explicit-tab="@explicitActiveTab" class="flex h-full w-full shrink-0 flex-col border-r border-white/10 bg-[#091a50]/60 backdrop-blur-2xl transition-all duration-300 md:w-80 lg:w-96">
     <div class="space-y-3.5 border-b border-white/10 p-4">
         <div class="flex items-center justify-between">
             <h2 class="flex items-center gap-2 text-base font-bold tracking-tight text-white">Messages <span id="unreadCounterBadge" class="rounded-full border border-white/10 bg-[#603273]/60 px-2 py-0.5 text-[11px] font-bold text-[#c79bd5]">@directMessages.Count</span></h2>
@@ -14,10 +21,6 @@
                 <span>Add / New</span>
             </button>
         </div>
-        <button type="button" data-action="open-create-group" class="flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-semibold text-white/80 transition hover:border-[#a875bc]/40 hover:bg-white/[0.09] hover:text-white">
-            <span class="text-[#c79bd5]">+</span>
-            <span>New private group</span>
-        </button>
         <div class="relative">
             <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-white/40">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -28,13 +31,19 @@
             </button>
         </div>
         <div class="flex gap-1.5 rounded-lg border border-white/5 bg-white/[0.04] p-1" role="tablist" aria-label="Conversation types">
-            <button type="button" data-filter="dm" role="tab" aria-selected="true" class="flex-1 rounded-md bg-[#603273] py-1 text-center text-xs font-semibold text-white shadow-sm transition">DM</button>
-            <button type="button" data-filter="groups" role="tab" aria-selected="false" class="flex-1 rounded-md py-1 text-center text-xs font-medium text-white/60 transition hover:bg-white/[0.05] hover:text-white">Groups</button>
-            <button type="button" data-filter="notifications" role="tab" aria-selected="false" class="flex-1 rounded-md py-1 text-center text-xs font-medium text-white/60 transition hover:bg-white/[0.05] hover:text-white">Notifications</button>
+            <button type="button" data-filter="dm" role="tab" aria-selected="@(initialTab == "dm" ? "true" : "false")" class="@TabClass("dm")">DM</button>
+            <button type="button" data-filter="groups" role="tab" aria-selected="@(initialTab == "groups" ? "true" : "false")" class="@TabClass("groups")">Groups</button>
+            <button type="button" data-filter="notifications" role="tab" aria-selected="@(initialTab == "notifications" ? "true" : "false")" class="@TabClass("notifications")">
+                Notifications
+                @if (invitedGroups.Count > 0)
+                {
+                    <span class="ml-1 inline-flex items-center justify-center rounded-full bg-[#a875bc]/40 px-1.5 py-0.5 text-[10px] font-bold text-white">@invitedGroups.Count</span>
+                }
+            </button>
         </div>
     </div>
     <div id="contactListContainer" class="flex-1 overflow-y-auto px-2 py-3">
-        <div data-conversation-list="dm" class="space-y-1.5">
+        <div data-conversation-list="dm" class="@(initialTab == "dm" ? "space-y-1.5" : "hidden space-y-1.5")">
         @foreach (var chat in directMessages)
         {
             var displayName = chat.Name ?? "Unknown user";
@@ -52,32 +61,8 @@
             <p class="px-3 py-12 text-center text-xs text-white/40">No direct messages yet.</p>
         }
         </div>
-        <div data-conversation-list="groups" class="hidden space-y-1.5">
-            @if (privateGroups.Any(group => group.Role == "Invited"))
-            {
-                <p class="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-widest text-[#c79bd5]">Invitations</p>
-                @foreach (var group in privateGroups.Where(group => group.Role == "Invited"))
-                {
-                    var groupName = group.Name ?? "Private group";
-                    <div class="rounded-xl border border-[#a875bc]/20 bg-[#603273]/10 p-3" data-group-chat data-group-name="@groupName">
-                        <div class="mb-2 flex items-center gap-3">
-                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-gradient-to-tr from-[#603273] to-[#a875bc] text-xs font-bold text-white">@groupName.Substring(0, Math.Min(2, groupName.Length)).ToUpperInvariant()</span>
-                            <span class="min-w-0 flex-1 truncate text-xs font-semibold text-white">@groupName</span>
-                        </div>
-                        <div class="flex gap-2">
-                            <form method="post" asp-page-handler="RespondToGroupInvitation" class="flex-1">
-                                <input type="hidden" name="uuid" value="@group.Uuid" />
-                                <button type="submit" name="accept" value="true" class="w-full rounded-lg bg-[#603273] px-2 py-1.5 text-[11px] font-semibold text-white transition hover:bg-[#75418b]">Join</button>
-                            </form>
-                            <form method="post" asp-page-handler="RespondToGroupInvitation" class="flex-1">
-                                <input type="hidden" name="uuid" value="@group.Uuid" />
-                                <button type="submit" name="accept" value="false" class="w-full rounded-lg border border-white/10 px-2 py-1.5 text-[11px] font-semibold text-white/70 transition hover:bg-white/10">Deny</button>
-                            </form>
-                        </div>
-                    </div>
-                }
-            }
-            @foreach (var group in privateGroups.Where(group => group.Role != "Invited"))
+        <div data-conversation-list="groups" class="@(initialTab == "groups" ? "space-y-1.5" : "hidden space-y-1.5")">
+            @foreach (var group in joinedGroups)
             {
                 var groupName = group.Name ?? "Private group";
                 var isSelectedGroup = selectedGroup?.Uuid == group.Uuid;
@@ -85,13 +70,39 @@
                     <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-gradient-to-tr from-[#603273] to-[#a875bc] text-xs font-bold text-white">@groupName.Substring(0, Math.Min(2, groupName.Length)).ToUpperInvariant()</span>
                     <span class="min-w-0 flex-1">
                         <span class="block truncate text-xs font-semibold text-white sm:text-sm">@groupName</span>
-                        <span class="block truncate text-[11px] text-white/50">Private group</span>
+                        <span class="block truncate text-[11px] text-white/50">@(group.Type == "PUBLIC" ? "Public group" : "Private group")</span>
                     </span>
                 </a>
             }
-            @if (privateGroups.Count == 0)
+            @if (joinedGroups.Count == 0)
             {
                 <p class="px-3 py-12 text-center text-xs text-white/40">No groups yet.</p>
+            }
+        </div>
+        <div data-conversation-list="notifications" class="@(initialTab == "notifications" ? "space-y-1.5" : "hidden space-y-1.5")">
+            @if (invitedGroups.Count > 0)
+            {
+                <p class="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-widest text-[#c79bd5]">Group invitations</p>
+                @foreach (var group in invitedGroups)
+                {
+                    var groupName = group.Name ?? "Private group";
+                    <div class="rounded-xl border border-[#a875bc]/20 bg-[#603273]/10 p-3" data-group-chat data-group-name="@groupName">
+                        <div class="mb-2 flex items-center gap-3">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-gradient-to-tr from-[#603273] to-[#a875bc] text-xs font-bold text-white">@groupName.Substring(0, Math.Min(2, groupName.Length)).ToUpperInvariant()</span>
+                            <span class="min-w-0 flex-1 truncate text-xs font-semibold text-white">@groupName</span>
+                        </div>
+                        <form method="post" asp-page-handler="RespondToGroupInvitation" class="flex gap-2">
+                            <input type="hidden" name="uuid" value="@group.Uuid" />
+                            <button type="submit" name="action" value="join" class="flex-1 rounded-lg bg-[#603273] px-2 py-1.5 text-[11px] font-semibold text-white transition hover:bg-[#75418b]">Join</button>
+                            <button type="submit" name="action" value="deny" class="flex-1 rounded-lg border border-white/10 px-2 py-1.5 text-[11px] font-semibold text-white/70 transition hover:bg-white/10">Deny</button>
+                            <button type="submit" name="action" value="block" class="flex-1 rounded-lg border border-rose-400/30 bg-rose-500/15 px-2 py-1.5 text-[11px] font-semibold text-rose-200 transition hover:bg-rose-500/30">Block</button>
+                        </form>
+                    </div>
+                }
+            }
+            @if (invitedGroups.Count == 0)
+            {
+                <p class="px-3 py-12 text-center text-xs text-white/40">No notifications yet.</p>
             }
         </div>
     </div>

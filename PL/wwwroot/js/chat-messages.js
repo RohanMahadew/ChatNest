@@ -3,6 +3,24 @@ const messageList = document.querySelector('[data-message-list]');
 if (messageList) {
     const channelUuid = messageList.dataset.channelUuid;
     const currentUserId = Number(messageList.dataset.currentUserId);
+    const currentUserRole = messageList.dataset.currentUserRole || '';
+    const isGroupChat = messageList.dataset.isGroup === 'true';
+
+    function canDeleteMessage(isCurrentUser, senderRole) {
+        if (isCurrentUser) {
+            return true;
+        }
+        if (!isGroupChat) {
+            return false;
+        }
+        if (currentUserRole === 'SuperAdmin') {
+            return senderRole !== 'SuperAdmin';
+        }
+        if (currentUserRole === 'Admin') {
+            return senderRole !== 'SuperAdmin' && senderRole !== 'Admin';
+        }
+        return false;
+    }
     const messageForm = document.getElementById('messageForm');
     const messageInput = document.getElementById('messageInput');
     const sendButton = document.getElementById('sendMessageButton');
@@ -108,12 +126,16 @@ if (messageList) {
         const sender = fragment.querySelector('[data-message-sender]');
         const bubble = fragment.querySelector('[data-message-bubble]');
         const actions = fragment.querySelector('[data-message-actions]');
+        const editButton = fragment.querySelector('[data-action="edit-message"]');
         const time = fragment.querySelector('[data-message-time]');
         const isCurrentUser = Number(message.userId) === currentUserId;
+        const senderRole = message.senderRole || '';
+        const canDelete = canDeleteMessage(isCurrentUser, senderRole);
         const senderName = message.senderName || `User ${message.userId}`;
 
         row.dataset.messageId = String(message.id);
         row.dataset.isCurrentUser = String(isCurrentUser);
+        row.dataset.canDelete = String(canDelete);
         row.classList.toggle('items-end', isCurrentUser);
         row.classList.toggle('items-start', !isCurrentUser);
         layout.classList.toggle('flex-row-reverse', isCurrentUser);
@@ -123,14 +145,26 @@ if (messageList) {
             avatar.classList.remove('flex');
             sender.classList.add('hidden');
             sender.classList.remove('block');
-            actions.classList.remove('hidden');
-            actions.classList.add('flex');
         } else {
             avatar.textContent = senderName.slice(0, 2).toUpperCase();
             avatar.title = senderName;
-            sender.textContent = senderName;
-            sender.classList.remove('hidden');
-            sender.classList.add('block');
+            if (isGroupChat) {
+                sender.textContent = senderName;
+                sender.classList.remove('hidden');
+                sender.classList.add('block');
+            } else {
+                sender.textContent = '';
+                sender.classList.add('hidden');
+                sender.classList.remove('block');
+            }
+        }
+
+        if (isCurrentUser || canDelete) {
+            actions.classList.remove('hidden');
+            actions.classList.add('flex');
+            if (editButton) {
+                editButton.classList.toggle('hidden', !isCurrentUser);
+            }
         }
 
         bubble.classList.toggle('bg-[#603273]/60', isCurrentUser);
@@ -243,29 +277,38 @@ if (messageList) {
         }
 
         const row = actionElement.closest('[data-message-row]');
-        if (!row || row.dataset.isCurrentUser !== 'true') {
+        if (!row) {
             return;
         }
 
+        const isCurrentUser = row.dataset.isCurrentUser === 'true';
+        const canDelete = isCurrentUser || row.dataset.canDelete === 'true';
+
         switch (actionElement.dataset.action) {
             case 'edit-message':
+                if (!isCurrentUser) return;
                 setDeleteConfirmMode(row, false);
                 setEditMode(row, true);
                 break;
             case 'cancel-edit':
+                if (!isCurrentUser) return;
                 setEditMode(row, false);
                 setSendStatus('');
                 break;
             case 'save-edit':
+                if (!isCurrentUser) return;
                 saveMessageEdit(row);
                 break;
             case 'delete-message':
+                if (!canDelete) return;
                 setDeleteConfirmMode(row, true);
                 break;
             case 'cancel-delete':
+                if (!canDelete) return;
                 setDeleteConfirmMode(row, false);
                 break;
             case 'confirm-delete':
+                if (!canDelete) return;
                 confirmMessageDelete(row);
                 break;
         }

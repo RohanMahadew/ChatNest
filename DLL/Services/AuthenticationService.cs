@@ -38,7 +38,9 @@ namespace BLL.Services
                 throw new InvalidOperationException(string.Join(" ", errors));
             }
 
-            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            // For testing reasons
+            //var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.UserName);
 
             var now = DateTime.UtcNow;
             var user = new User(0, request.UserName, request.Email, hashedPassword, request.DateOfBirth, now, now);

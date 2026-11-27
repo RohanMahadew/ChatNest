@@ -27,13 +27,13 @@ namespace BLL.Services
         {
             ValidateContent(senderUserId, content);
 
-            var channel = await _channelService.GetChatChannelForUserAsync(channelUuid, senderUserId);
-            if (channel is null)
+            var membership = await _channelService.GetChatMembershipForUserAsync(channelUuid, senderUserId);
+            if (membership is null)
             {
                 return null;
             }
 
-            var message = new Message(senderUserId, channel.Id, MessageStatus.Send, content.Trim());
+            var message = new Message(senderUserId, membership.Channel.Id, MessageStatus.Send, content.Trim());
             var stored = await _messageRepository.Store(message);
             if (stored is null)
             {
@@ -41,18 +41,18 @@ namespace BLL.Services
             }
 
             var sender = await _userRepository.FindUserById(senderUserId);
-            return MessageDTOExtensions.FromMessage(stored, sender?.UserName);
+            return MessageDTOExtensions.FromMessage(stored, sender?.UserName, membership.Role.ToString());
         }
 
         public async Task<List<MessageDTO>> GetMessagesForChannelAsync(string channelUuid, int userId)
         {
-            var channel = await _channelService.GetChatChannelForUserAsync(channelUuid, userId);
-            if (channel is null)
+            var membership = await _channelService.GetChatMembershipForUserAsync(channelUuid, userId);
+            if (membership is null)
             {
                 return [];
             }
 
-            var messages = (await _messageRepository.FindByChannel(channel.Id))
+            var messages = (await _messageRepository.FindByChannel(membership.Channel.Id))
                 .Where(message => message is not null)
                 .Select(message => message!)
                 .OrderBy(message => message.CreatedAt)
@@ -66,10 +66,14 @@ namespace BLL.Services
                 senderNamesByUserId[senderId] = user?.UserName;
             }
 
+            var members = await _channelService.GetChannelMembersAsync(membership.Channel.Uuid, userId);
+            var rolesByUserId = members.ToDictionary(member => member.UserId, member => member.Role);
+
             return messages
                 .Select(message => MessageDTOExtensions.FromMessage(
                     message,
-                    senderNamesByUserId.GetValueOrDefault(message.UserId)))
+                    senderNamesByUserId.GetValueOrDefault(message.UserId),
+                    rolesByUserId.GetValueOrDefault(message.UserId)))
                 .ToList();
         }
 
@@ -82,14 +86,14 @@ namespace BLL.Services
 
             ValidateContent(userId, content);
 
-            var channel = await _channelService.GetChatChannelForUserAsync(channelUuid, userId);
-            if (channel is null)
+            var membership = await _channelService.GetChatMembershipForUserAsync(channelUuid, userId);
+            if (membership is null)
             {
                 return null;
             }
 
             var existing = await _messageRepository.FindById(messageId);
-            if (existing is null || existing.ChannelId != channel.Id || existing.UserId != userId)
+            if (existing is null || existing.ChannelId != membership.Channel.Id || existing.UserId != userId)
             {
                 return null;
             }
@@ -98,12 +102,12 @@ namespace BLL.Services
             var trimmedContent = content.Trim();
             if (string.Equals(existing.Content, trimmedContent, StringComparison.Ordinal))
             {
-                return MessageDTOExtensions.FromMessage(existing, sender?.UserName);
+                return MessageDTOExtensions.FromMessage(existing, sender?.UserName, membership.Role.ToString());
             }
 
             existing.Content = trimmedContent;
             var updated = await _messageRepository.Update(existing);
-            return updated is null ? null : MessageDTOExtensions.FromMessage(updated, sender?.UserName);
+            return updated is null ? null : MessageDTOExtensions.FromMessage(updated, sender?.UserName, membership.Role.ToString());
         }
 
         public async Task<bool> DeleteMessageAsync(string channelUuid, int messageId, int userId)
@@ -113,16 +117,37 @@ namespace BLL.Services
                 return false;
             }
 
-            var channel = await _channelService.GetChatChannelForUserAsync(channelUuid, userId);
-            if (channel is null)
+            var membership = await _channelService.GetChatMembershipForUserAsync(channelUuid, userId);
+            if (membership is null)
             {
                 return false;
             }
 
             var existing = await _messageRepository.FindById(messageId);
-            if (existing is null || existing.ChannelId != channel.Id || existing.UserId != userId)
+            if (existing is null || existing.ChannelId != membership.Channel.Id)
             {
                 return false;
+            }
+
+            if (existing.UserId != userId)
+            {
+                if (membership.Channel.Type is not (ChannelType.PRIVATE or ChannelType.PUBLIC))
+                {
+                    return false;
+                }
+
+                if (membership.Role == ChannelRole.Admin)
+                {
+                    var authorRole = await _channelService.GetUserRoleInChannelAsync(membership.Channel.Id, existing.UserId);
+                    if (authorRole is ChannelRole.SuperAdmin or ChannelRole.Admin)
+                    {
+                        return false;
+                    }
+                }
+                else if (membership.Role != ChannelRole.SuperAdmin)
+                {
+                    return false;
+                }
             }
 
             return await _messageRepository.Delete(messageId);

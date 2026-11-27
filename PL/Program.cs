@@ -26,7 +26,12 @@ builder.Services.AddScoped<ISqlConnectionInterface, SqlConnectionEngine>();
 builder.Services.AddSignalR();
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie();
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Login";
+        options.LogoutPath = "/Logout";
+        options.AccessDeniedPath = "/Login";
+    });
 builder.Services.AddAuthorization();
 
 // fix me at some point
@@ -38,7 +43,7 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    // The default HSTS value is 30 days. You may want to change this for production scenarios,see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -64,6 +69,17 @@ app.MapGet("/api/users/search", async (string query, ClaimsPrincipal user, IUser
     }
 
     return Results.Ok(await userService.SearchUsersAsync(query, userId));
+})
+    .RequireAuthorization();
+
+app.MapGet("/api/groups/search", async (string query, ClaimsPrincipal user, IChannelServiceInterface channelService) =>
+{
+    if (!int.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    return Results.Ok(await channelService.SearchPublicGroupsAsync(query, userId));
 })
     .RequireAuthorization();
 
